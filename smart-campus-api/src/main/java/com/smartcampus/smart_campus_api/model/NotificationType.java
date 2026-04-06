@@ -8,5 +8,6 @@ public enum NotificationType {
     TICKET_CLOSED,
     TICKET_REJECTED,
     NEW_COMMENT,
+    TICKET_STATUS_CHANGED,
     SYSTEM
 }
