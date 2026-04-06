@@ -30,7 +30,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .message(dto.getMessage())
                 .type(dto.getType())
                 .referenceId(dto.getReferenceId())
-                .isRead(false)
+                .read(false)
                 .build();
 
         return toDTO(notificationRepository.save(notification));
@@ -46,13 +46,13 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public List<NotificationResponseDTO> getUnreadNotifications(Long userId) {
         return notificationRepository
-                .findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId)
+                .findByRecipientIdAndReadFalseOrderByCreatedAtDesc(userId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
     public long getUnreadCount(Long userId) {
-        return notificationRepository.countByRecipientIdAndIsReadFalse(userId);
+        return notificationRepository.countByRecipientIdAndReadFalse(userId);
     }
 
     @Override
@@ -71,7 +71,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead(Long userId) {
         List<Notification> unread = notificationRepository
-                .findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+                .findByRecipientIdAndReadFalseOrderByCreatedAtDesc(userId);
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }
@@ -96,7 +96,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .message(n.getMessage())
                 .type(n.getType())
                 .referenceId(n.getReferenceId())
-                .isRead(n.isRead())
+                .read(n.isRead())
                 .createdAt(n.getCreatedAt())
                 .build();
     }

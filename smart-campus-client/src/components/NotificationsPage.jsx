@@ -35,7 +35,7 @@ const TYPE_LABELS = {
 export default function NotificationsPage() {
   const { user } = useAuth()
   const [notifications, setNotifications] = useState([])
-  const [filter, setFilter] = useState('ALL') // ALL | UNREAD
+  const [filter, setFilter] = useState('ALL')
   const [loading, setLoading] = useState(true)
 
   const fetchNotifications = async () => {
@@ -69,10 +69,10 @@ export default function NotificationsPage() {
   }
 
   const displayed = filter === 'UNREAD'
-    ? notifications.filter(n => !n.isRead)
+    ? notifications.filter(n => !n.read)   // ✅ fixed
     : notifications
 
-  const unreadCount = notifications.filter(n => !n.isRead).length
+  const unreadCount = notifications.filter(n => !n.read).length  // ✅ fixed
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -132,7 +132,7 @@ export default function NotificationsPage() {
               <div
                 key={notif.id}
                 className={`flex gap-4 p-4 rounded-2xl border transition-all ${
-                  !notif.isRead
+                  !notif.read                                         // ✅ fixed
                     ? 'bg-slate-800/60 border-indigo-500/30'
                     : 'bg-slate-900/40 border-slate-800'
                 }`}
@@ -144,14 +144,14 @@ export default function NotificationsPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between gap-2">
                     <div>
-                      <p className={`font-semibold text-sm ${!notif.isRead ? 'text-white' : 'text-slate-300'}`}>
+                      <p className={`font-semibold text-sm ${!notif.read ? 'text-white' : 'text-slate-300'}`}>  {/* ✅ fixed */}
                         {notif.title}
                       </p>
                       <span className="text-xs text-slate-600">
                         {TYPE_LABELS[notif.type]}
                       </span>
                     </div>
-                    {!notif.isRead && (
+                    {!notif.read && (                                 // ✅ fixed
                       <span className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1.5" />
                     )}
                   </div>
@@ -166,7 +166,7 @@ export default function NotificationsPage() {
                 </div>
 
                 <div className="flex flex-col gap-2 flex-shrink-0">
-                  {!notif.isRead && (
+                  {!notif.read && (                                   // ✅ fixed
                     <button
                       onClick={() => handleMarkAsRead(notif.id)}
                       className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 hover:bg-indigo-500/20 transition-colors"
