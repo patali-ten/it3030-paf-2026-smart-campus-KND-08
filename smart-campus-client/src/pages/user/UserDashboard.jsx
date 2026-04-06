@@ -1,7 +1,9 @@
 import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { CalendarCheck, Wrench, Bell, ArrowRight } from 'lucide-react'
-import { Link } from 'react-router-dom' // Added for SPA navigation
+import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { getMyBookings } from '../../api/bookings'
 
 const QUICK_ACTIONS = [
   { label: 'Book a Resource', desc: 'Reserve rooms, labs & equipment', href: '/user/bookings', icon: CalendarCheck, color: 'from-indigo-600 to-indigo-800' },
@@ -11,6 +13,13 @@ const QUICK_ACTIONS = [
 
 export default function UserDashboard() {
   const { user } = useAuth()
+  const [recentBookings, setRecentBookings] = useState([])
+
+  useEffect(() => {
+    getMyBookings()
+      .then(res => setRecentBookings(res.data.slice(0, 3)))
+      .catch(() => {})
+  }, [])
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -41,18 +50,51 @@ export default function UserDashboard() {
           ))}
         </div>
 
-        {/* Placeholder sections */}
+        {/* Dashboard sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* My Recent Bookings - Member 2 */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
               <CalendarCheck size={18} className="text-indigo-400" /> My Recent Bookings
             </h2>
-            <div className="text-center py-8 text-slate-600 text-sm">
-              Your bookings will appear here.<br />
-              <span className="text-slate-700">(Member 2 will add this)</span>
-            </div>
+            {recentBookings.length === 0 ? (
+              <div className="text-center py-8 text-slate-600 text-sm">
+                No bookings yet.{' '}
+                <Link to="/user/bookings" className="text-indigo-400 hover:underline">
+                  Make your first booking
+                </Link>
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-800">
+                {recentBookings.map(booking => (
+                  <div key={booking.id} className="py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium">{booking.resourceName}</p>
+                      <p className="text-slate-500 text-xs mt-0.5">
+                        {booking.bookingDate} · {booking.startTime} – {booking.endTime}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
+                      booking.status === 'APPROVED'  ? 'bg-emerald-500/10 text-emerald-400' :
+                      booking.status === 'PENDING'   ? 'bg-amber-500/10 text-amber-400' :
+                      booking.status === 'REJECTED'  ? 'bg-rose-500/10 text-rose-400' :
+                      'bg-slate-500/10 text-slate-400'
+                    }`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                ))}
+                <div className="pt-3">
+                  <Link to="/user/bookings" className="text-indigo-400 text-sm hover:underline">
+                    View all bookings →
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
 
+          {/* My Open Tickets - Member 3 will add this */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
               <Wrench size={18} className="text-amber-400" /> My Open Tickets
@@ -62,6 +104,7 @@ export default function UserDashboard() {
               <span className="text-slate-700">(Member 3 will add this)</span>
             </div>
           </div>
+
         </div>
       </div>
     </div>
