@@ -118,6 +118,30 @@ public class BookingService {
         return toResponse(findBookingOrThrow(bookingId));
     }
 
+    // ===================== USER: DELETE OWN REJECTED/CANCELLED BOOKING =====================
+@Transactional
+public void deleteBooking(Long bookingId, Long userId) {
+    Booking booking = findBookingOrThrow(bookingId);
+
+    // Only the owner can delete their booking
+    if (!booking.getUser().getId().equals(userId)) {
+        throw new SecurityException("You can only delete your own bookings");
+    }
+
+    // User can only delete REJECTED or CANCELLED bookings
+    if (booking.getStatus() != BookingStatus.REJECTED &&
+        booking.getStatus() != BookingStatus.CANCELLED) {
+        throw new IllegalStateException(
+            "You can only delete REJECTED or CANCELLED bookings. " +
+            "Please cancel the booking first."
+        );
+    }
+
+    bookingRepository.delete(booking);
+}
+
+
+
     // ===================== ADMIN: APPROVE OR REJECT =====================
     @Transactional
     public BookingResponse reviewBooking(Long bookingId, AdminReviewRequest request, Long adminId) {
@@ -210,6 +234,13 @@ public class BookingService {
 
         return toResponse(updated);
     }
+
+    // ===================== ADMIN: DELETE ANY BOOKING =====================
+@Transactional
+public void adminDeleteBooking(Long bookingId) {
+    Booking booking = findBookingOrThrow(bookingId);
+    bookingRepository.delete(booking);
+}
 
     // ===================== CHECK AVAILABILITY =====================
     public List<BookingResponse> getAvailabilityForResource(Long resourceId, LocalDate date) {

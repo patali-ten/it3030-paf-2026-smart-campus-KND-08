@@ -2,31 +2,35 @@ import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { getAllUsers, updateUserRole, deleteUser } from '../../api/users'
+import { getAllBookings } from '../../api/bookings'
+import { Link } from 'react-router-dom'
 import {
   Users, Building2, CalendarCheck, Wrench,
-  Shield, Trash2, ChevronDown
+  Trash2
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const ROLES = ['USER', 'ADMIN', 'TECHNICIAN']
 
 const STAT_CARDS = [
-  { label: 'Total Users', icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
-  { label: 'Resources', icon: Building2, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-  { label: 'Bookings', icon: CalendarCheck, color: 'text-amber-400', bg: 'bg-amber-500/10' },
-  { label: 'Open Tickets', icon: Wrench, color: 'text-rose-400', bg: 'bg-rose-500/10' },
+  { label: 'Total Users',  icon: Users,         color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+  { label: 'Resources',    icon: Building2,      color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { label: 'Bookings',     icon: CalendarCheck,  color: 'text-amber-400', bg: 'bg-amber-500/10' },
+  { label: 'Open Tickets', icon: Wrench,         color: 'text-rose-400', bg: 'bg-rose-500/10' },
 ]
 
 const ROLE_STYLES = {
-  ADMIN: 'bg-rose-500/10 text-rose-400',
+  ADMIN:      'bg-rose-500/10 text-rose-400',
   TECHNICIAN: 'bg-amber-500/10 text-amber-400',
-  USER: 'bg-indigo-500/10 text-indigo-400',
+  USER:       'bg-indigo-500/10 text-indigo-400',
 }
 
 export default function AdminDashboard() {
   const { user } = useAuth()
   const [users, setUsers] = useState([])
   const [loadingUsers, setLoadingUsers] = useState(true)
+  const [pendingBookings, setPendingBookings] = useState([])
+  const [bookingCount, setBookingCount] = useState(0)
 
   const fetchUsers = async () => {
     try {
@@ -39,30 +43,27 @@ export default function AdminDashboard() {
     }
   }
 
-  useEffect(() => { fetchUsers() }, [])
-
-  const handleRoleChange = async (userId, newRole) => {
+  const fetchBookings = async () => {
     try {
-      await updateUserRole(userId, newRole)
-      toast.success('Role updated')
-      fetchUsers()
+      // Get pending bookings for the dashboard list
+      const pendingRes = await getAllBookings('PENDING')
+      setPendingBookings(pendingRes.data.slice(0, 5))
+
+      // Get all bookings for the count
+      const allRes = await getAllBookings()
+      setBookingCount(allRes.data.length)
     } catch {
-      toast.error('Failed to update role')
+      // silently ignore - not critical
     }
   }
 
-  const handleDelete = async (userId, userName) => {
-    if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return
-    try {
-      await deleteUser(userId)
-      toast.success('User deleted')
-      fetchUsers()
-    } catch {
-      toast.error('Failed to delete user')
-    }
-  }
+  useEffect(() => {
+    fetchUsers()
+    fetchBookings()
+  }, [])
 
-  const stats = [users.length, '—', '—', '—']
+  // Stats: users, resources(—), bookings count, tickets(—)
+  const stats = [users.length, '—', bookingCount, '—']
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -71,9 +72,7 @@ export default function AdminDashboard() {
 
         {/* Header */}
         <div className="mb-10">
-          <h1 className="text-3xl font-bold text-white">
-            Admin Dashboard
-          </h1>
+          <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
           <p className="text-slate-400 mt-1">Manage users, resources, and campus operations.</p>
         </div>
 
@@ -90,7 +89,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* User Management Table */}
+        {/* User Management Table - leader's code unchanged */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800">
             <h2 className="text-white font-semibold flex items-center gap-2">
@@ -157,17 +156,51 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Placeholder sections for other members */}
+        {/* Bottom sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+
+          {/* Pending Bookings - Member 2 */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
               <CalendarCheck size={18} className="text-amber-400" /> Pending Bookings
             </h2>
-            <div className="text-center py-8 text-slate-600 text-sm">
-              Pending booking approvals will appear here.<br />
-              <span className="text-slate-700">(Member 2 will add this)</span>
-            </div>
+            {pendingBookings.length === 0 ? (
+              <div className="text-center py-8 text-slate-600 text-sm">
+                No pending bookings right now.
+              </div>
+            ) : (
+              <div className="divide-y divide-slate-800">
+                {pendingBookings.map(booking => (
+                  <div key={booking.id} className="py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-white text-sm font-medium">
+                        {booking.resourceName}
+                      </p>
+                      <p className="text-slate-500 text-xs mt-0.5">
+                        {booking.userName} · {booking.bookingDate}
+                      </p>
+                      <p className="text-slate-600 text-xs">
+                        {booking.startTime} – {booking.endTime}
+                      </p>
+                    </div>
+                    <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      PENDING
+                    </span>
+                  </div>
+                ))}
+                <div className="pt-3">
+                  <Link
+                    to="/admin/bookings"
+                    className="text-indigo-400 text-sm hover:underline"
+                  >
+                    Review all bookings →
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
+
+          {/* Open Tickets - Member 3 will add this */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
               <Wrench size={18} className="text-rose-400" /> Open Tickets
@@ -177,8 +210,23 @@ export default function AdminDashboard() {
               <span className="text-slate-700">(Member 3 will add this)</span>
             </div>
           </div>
+
         </div>
       </div>
     </div>
   )
+
+  // ---- helper functions (unchanged from leader's code) ----
+  function handleRoleChange(userId, newRole) {
+    updateUserRole(userId, newRole)
+      .then(() => { toast.success('Role updated'); fetchUsers() })
+      .catch(() => toast.error('Failed to update role'))
+  }
+
+  function handleDelete(userId, userName) {
+    if (!confirm(`Delete user "${userName}"? This cannot be undone.`)) return
+    deleteUser(userId)
+      .then(() => { toast.success('User deleted'); fetchUsers() })
+      .catch(() => toast.error('Failed to delete user'))
+  }
 }

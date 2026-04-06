@@ -8,6 +8,11 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import OAuthCallback from './pages/auth/OAuthCallback'
 
+//Booking
+import UserBookings from './pages/user/UserBookings'
+import AdminBookingManager from './pages/admin/AdminBookingManager'
+
+
 // Dashboards
 import UserDashboard from './pages/user/UserDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -75,6 +80,20 @@ export default function App() {
               <ProfilePage />
             </ProtectedRoute>
           } />
+
+          {/* USER booking route - Member 2 */}
+<Route path="/user/bookings" element={
+  <ProtectedRoute allowedRoles={['USER']}>
+    <UserBookings />
+  </ProtectedRoute>
+} />
+
+{/* ADMIN booking route - Member 2 */}
+<Route path="/admin/bookings" element={
+  <ProtectedRoute allowedRoles={['ADMIN']}>
+    <AdminBookingManager />
+  </ProtectedRoute>
+} />
 
           {/* TECHNICIAN routes */}
           <Route path="/technician/dashboard" element={
