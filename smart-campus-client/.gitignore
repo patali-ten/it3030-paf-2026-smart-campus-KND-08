@@ -23,3 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 .vscode/
+
+# Environment variables - API keys must never go to GitHub
+.env
+.env.local
+.env.production
