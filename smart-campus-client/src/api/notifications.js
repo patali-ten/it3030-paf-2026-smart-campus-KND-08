@@ -14,3 +14,9 @@ export const markAllAsRead = (userId) =>
 
 export const deleteNotification = (notificationId, userId) =>
   api.delete(`/notifications/${notificationId}?userId=${userId}`)
+
+export const getNotificationPreferences = (userId) =>
+  api.get(`/notification-preferences/${userId}`)
+
+export const updateNotificationPreferences = (userId, enabledTypes) =>
+  api.put(`/notification-preferences/${userId}`, enabledTypes)
