@@ -12,17 +12,24 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationPreferenceService preferenceService;
 
     @Override
     public NotificationResponseDTO createNotification(CreateNotificationDTO dto) {
         User user = userRepository.findById(dto.getRecipientUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getRecipientUserId()));
+
+        // Check if user has this notification type enabled — if not, silently skip
+        if (!preferenceService.isTypeEnabled(dto.getRecipientUserId(), dto.getType())) {
+            return null; // user has disabled this type — don't create
+        }
 
         Notification notification = Notification.builder()
                 .recipient(user)
