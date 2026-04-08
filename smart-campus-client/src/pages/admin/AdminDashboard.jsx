@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { getAllUsers, updateUserRole, deleteUser } from '../../api/users'
+import AdminTicketsPage from './AdminTicketsPage'
+
+
 import {
   Users, Building2, CalendarCheck, Wrench,
   Shield, Trash2, ChevronDown
@@ -168,15 +171,12 @@ export default function AdminDashboard() {
               <span className="text-slate-700">(Member 2 will add this)</span>
             </div>
           </div>
+          
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Wrench size={18} className="text-rose-400" /> Open Tickets
-            </h2>
-            <div className="text-center py-8 text-slate-600 text-sm">
-              Open maintenance tickets will appear here.<br />
-              <span className="text-slate-700">(Member 3 will add this)</span>
-            </div>
-          </div>
+  <AdminTicketsPage />
+</div>
+
+
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { CalendarCheck, Wrench, Bell, ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom' // Added for SPA navigation
+import MyTicketsPage from './MyTicketsPage'
 
 const QUICK_ACTIONS = [
   { label: 'Book a Resource', desc: 'Reserve rooms, labs & equipment', href: '/user/bookings', icon: CalendarCheck, color: 'from-indigo-600 to-indigo-800' },
@@ -54,14 +55,10 @@ export default function UserDashboard() {
           </div>
 
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Wrench size={18} className="text-amber-400" /> My Open Tickets
-            </h2>
-            <div className="text-center py-8 text-slate-600 text-sm">
-              Your tickets will appear here.<br />
-              <span className="text-slate-700">(Member 3 will add this)</span>
-            </div>
-          </div>
+  <MyTicketsPage />
+</div>
+
+
         </div>
       </div>
     </div>
