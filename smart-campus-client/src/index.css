@@ -1,1 +1,30 @@
 @import "tailwindcss";
+
+* {
+  font-family: 'DM Sans', sans-serif;
+}
+
+.font-display {
+  font-family: 'Playfair Display', serif;
+}
+
+/* Navy & Gold CSS variables */
+:root {
+  --navy:      #1B2A4A;
+  --navy-dark: #111D33;
+  --navy-mid:  #243354;
+  --navy-light:#2E4070;
+  --gold:      #C9A84C;
+  --gold-light:#E2C06B;
+  --gold-dim:  #A8863A;
+  --surface:   #F5F6FA;
+  --surface2:  #ECEEF5;
+  --border:    #D1D5E8;
+  --text:      #1B2A4A;
+  --text-muted:#5B6A8A;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1B2A4A; }
+::-webkit-scrollbar-thumb { background: #C9A84C55; border-radius: 3px; }
