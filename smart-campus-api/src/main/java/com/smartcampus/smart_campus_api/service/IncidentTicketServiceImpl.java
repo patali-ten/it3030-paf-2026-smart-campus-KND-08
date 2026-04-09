@@ -28,15 +28,10 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
  
     @Value("${app.upload.dir:uploads/tickets}")
     private String uploadDir;
- 
-    // =====================
-    // TICKET OPERATIONS
-    // =====================
- 
+
     @Override
     public TicketResponseDTO createTicket(CreateTicketDTO dto) {
         User reporter = findUserOrThrow(dto.getReporterId());
- 
         IncidentTicket ticket = IncidentTicket.builder()
                 .reporter(reporter)
                 .title(dto.getTitle())
@@ -47,7 +42,6 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .contactDetails(dto.getContactDetails())
                 .status(TicketStatus.OPEN)
                 .build();
- 
         return mapToResponseDTO(ticketRepository.save(ticket));
     }
  
@@ -99,38 +93,27 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .stream().map(this::mapToResponseDTO).collect(Collectors.toList());
     }
  
-    // =====================
-    // STATUS & ASSIGNMENT
-    // =====================
- 
     @Override
     public TicketResponseDTO updateTicketStatus(Long ticketId, UpdateTicketStatusDTO dto) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
- 
         if (dto.getStatus() == TicketStatus.REJECTED &&
                 (dto.getRejectionReason() == null || dto.getRejectionReason().isBlank())) {
             throw new RuntimeException("Rejection reason is required");
         }
- 
         TicketStatus oldStatus = ticket.getStatus();
         ticket.setStatus(dto.getStatus());
- 
         if (dto.getResolutionNote() != null) ticket.setResolutionNote(dto.getResolutionNote());
         if (dto.getRejectionReason() != null) ticket.setRejectionReason(dto.getRejectionReason());
- 
         IncidentTicket updated = ticketRepository.save(ticket);
- 
-        // Notify reporter about status change
         if (!oldStatus.equals(dto.getStatus())) {
             notificationService.createNotification(CreateNotificationDTO.builder()
-                    .recipientUserId(ticket.getReporter().getId())   // FIXED
+                    .recipientUserId(ticket.getReporter().getId())
                     .title("Ticket Status Updated")
                     .message("Your ticket \"" + ticket.getTitle() + "\" status changed to " + dto.getStatus())
                     .type(NotificationType.TICKET_STATUS_CHANGED)
                     .referenceId(String.valueOf(ticketId))
                     .build());
         }
- 
         return mapToResponseDTO(updated);
     }
  
@@ -138,63 +121,47 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
     public TicketResponseDTO assignTicket(Long ticketId, AssignTicketDTO dto) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         User assignee = findUserOrThrow(dto.getAssigneeId());
- 
         ticket.setAssignee(assignee);
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
         }
- 
         IncidentTicket updated = ticketRepository.save(ticket);
- 
-        // Notify reporter about assignment
         notificationService.createNotification(CreateNotificationDTO.builder()
-                .recipientUserId(ticket.getReporter().getId())       // FIXED
+                .recipientUserId(ticket.getReporter().getId())
                 .title("Technician Assigned")
                 .message("A technician has been assigned to your ticket \"" + ticket.getTitle() + "\"")
                 .type(NotificationType.TICKET_STATUS_CHANGED)
                 .referenceId(String.valueOf(ticketId))
                 .build());
- 
         return mapToResponseDTO(updated);
     }
- 
-    // =====================
-    // ATTACHMENTS
-    // =====================
  
     @Override
     public TicketAttachmentResponseDTO addAttachment(Long ticketId, MultipartFile file) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
- 
         if (attachmentRepository.countByTicketId(ticketId) >= 3) {
             throw new RuntimeException("Maximum 3 attachments allowed per ticket");
         }
- 
         String contentType = file.getContentType();
         if (contentType == null || !contentType.startsWith("image/")) {
             throw new RuntimeException("Only image files are allowed");
         }
- 
         String originalFilename = file.getOriginalFilename() != null ? file.getOriginalFilename() : "attachment";
         String extension = originalFilename.contains(".")
                 ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
         String storedName = UUID.randomUUID() + extension;
         Path ticketDir = Paths.get(uploadDir, String.valueOf(ticketId));
- 
         try {
             Files.createDirectories(ticketDir);
             Path targetPath = ticketDir.resolve(storedName);
             Files.copy(file.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
- 
             TicketAttachment attachment = TicketAttachment.builder()
                     .ticket(ticket)
                     .fileName(originalFilename)
                     .filePath(targetPath.toString())
                     .contentType(contentType)
                     .build();
- 
             return mapToAttachmentDTO(attachmentRepository.save(attachment));
- 
         } catch (IOException e) {
             throw new RuntimeException("Failed to store file: " + e.getMessage());
         }
@@ -204,17 +171,14 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
     public void deleteAttachment(Long attachmentId, Long requestingUserId) {
         TicketAttachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found: " + attachmentId));
- 
         if (!attachment.getTicket().getReporter().getId().equals(requestingUserId)) {
             throw new RuntimeException("Not authorized to delete this attachment");
         }
- 
         try {
             Files.deleteIfExists(Paths.get(attachment.getFilePath()));
         } catch (IOException e) {
             // log but continue
         }
- 
         attachmentRepository.delete(attachment);
     }
  
@@ -238,45 +202,34 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .getContentType();
     }
  
-    // =====================
-    // COMMENTS
-    // =====================
- 
     @Override
     public TicketCommentResponseDTO addComment(Long ticketId, TicketCommentDTO dto) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         User author = findUserOrThrow(dto.getAuthorId());
- 
         TicketComment comment = TicketComment.builder()
                 .ticket(ticket)
                 .author(author)
                 .content(dto.getContent())
                 .build();
- 
         TicketComment saved = commentRepository.save(comment);
- 
-        // Notify reporter if commenter is not the reporter
         if (!author.getId().equals(ticket.getReporter().getId())) {
             notificationService.createNotification(CreateNotificationDTO.builder()
-                    .recipientUserId(ticket.getReporter().getId())   // FIXED
+                    .recipientUserId(ticket.getReporter().getId())
                     .title("New Comment on Your Ticket")
                     .message(author.getName() + " commented on your ticket \"" + ticket.getTitle() + "\"")
                     .type(NotificationType.NEW_COMMENT)
                     .referenceId(String.valueOf(ticketId))
                     .build());
         }
- 
         return mapToCommentDTO(saved);
     }
  
     @Override
     public TicketCommentResponseDTO editComment(Long commentId, TicketCommentDTO dto) {
         TicketComment comment = findCommentOrThrow(commentId);
- 
         if (!comment.getAuthor().getId().equals(dto.getAuthorId())) {
             throw new RuntimeException("Not authorized to edit this comment");
         }
- 
         comment.setContent(dto.getContent());
         return mapToCommentDTO(commentRepository.save(comment));
     }
@@ -284,11 +237,9 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
     @Override
     public void deleteComment(Long commentId, Long requestingUserId) {
         TicketComment comment = findCommentOrThrow(commentId);
- 
         if (!comment.getAuthor().getId().equals(requestingUserId)) {
             throw new RuntimeException("Not authorized to delete this comment");
         }
- 
         commentRepository.delete(comment);
     }
  
@@ -299,10 +250,6 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
         return commentRepository.findByTicketIdOrderByCreatedAtAsc(ticketId)
                 .stream().map(this::mapToCommentDTO).collect(Collectors.toList());
     }
- 
-    // =====================
-    // PRIVATE HELPERS
-    // =====================
  
     private IncidentTicket findTicketOrThrow(Long id) {
         return ticketRepository.findById(id)
@@ -346,7 +293,7 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
         return TicketAttachmentResponseDTO.builder()
                 .id(a.getId())
                 .fileName(a.getFileName())
-                .fileUrl("/api/v1/tickets/attachments/" + a.getId() + "/file")
+                .fileUrl("http://localhost:8080/api/v1/tickets/attachments/" + a.getId() + "/file") // ✅ FIXED
                 .contentType(a.getContentType())
                 .uploadedAt(a.getUploadedAt())
                 .build();

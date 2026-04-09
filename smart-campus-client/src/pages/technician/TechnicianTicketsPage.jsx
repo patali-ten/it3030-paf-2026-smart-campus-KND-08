@@ -51,7 +51,6 @@ export default function TechnicianTicketsPage() {
     }
   }
 
-  // Sync selectedTicket after refresh
   useEffect(() => {
     if (selectedTicket) {
       const updated = tickets.find(t => t.id === selectedTicket.id)
@@ -170,7 +169,27 @@ export default function TechnicianTicketsPage() {
                   >
                     <p className="text-slate-300 text-sm">{ticket.description}</p>
 
-                    {/* Resolution Note display */}
+                    {/* ✅ Attachments */}
+                    {ticket.attachments?.length > 0 && (
+                      <div>
+                        <p className="text-slate-400 text-xs mb-2">
+                          Attachments ({ticket.attachments.length})
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          {ticket.attachments.map(a => (
+                            <img
+                              key={a.id}
+                              src={a.fileUrl}
+                              alt={a.fileName}
+                              className="w-24 h-24 object-cover rounded-lg border border-slate-700 cursor-pointer hover:scale-105 transition"
+                              onClick={() => window.open(a.fileUrl, '_blank')}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Resolution Note */}
                     {ticket.resolutionNote && (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
                         <p className="text-green-400 text-xs font-medium">Resolution Note</p>
@@ -240,8 +259,6 @@ export default function TechnicianTicketsPage() {
                           <div key={c.id} className="bg-slate-900 rounded-xl p-3">
                             <div className="flex items-center justify-between mb-1">
                               <p className="text-indigo-400 text-xs font-medium">{c.authorName}</p>
-
-                              {/* Edit/Delete only own comments */}
                               {c.authorId === user.userId && (
                                 <div className="flex gap-2">
                                   <button
@@ -288,7 +305,6 @@ export default function TechnicianTicketsPage() {
                         ))}
                       </div>
 
-                      {/* Add comment */}
                       <div className="flex gap-2 mt-3">
                         <input
                           className="flex-1 bg-slate-900 border border-slate-600 text-white rounded-xl px-3 py-2 text-sm"
