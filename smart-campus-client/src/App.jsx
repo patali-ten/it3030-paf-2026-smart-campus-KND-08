@@ -24,6 +24,10 @@ import NotificationsPage from './components/NotificationsPage'
 // Chatbot - Member 2 Innovation
 import ChatBot from './components/ChatBot'
 
+// Resources - Member 1
+import ResourceCatalogue from './pages/user/ResourceCatalogue'
+import AdminResources from './pages/admin/AdminResources'
+
 export default function App() {
   return (
     <AuthProvider>
@@ -96,7 +100,21 @@ export default function App() {
               <AdminBookingManager />
             </ProtectedRoute>
           } />
+          
+          {/* USER resource route - Member 1 */}
+          <Route path="/user/resources" element={
+            <ProtectedRoute allowedRoles={['USER']}>
+              <ResourceCatalogue />
+            </ProtectedRoute>
+          } />
 
+          {/* ADMIN resource route - Member 1 */}
+          <Route path="/admin/resources" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminResources />
+            </ProtectedRoute>
+          } />
+          
           {/* TECHNICIAN routes */}
           <Route path="/technician/dashboard" element={
             <ProtectedRoute allowedRoles={['TECHNICIAN']}>
@@ -113,6 +131,7 @@ export default function App() {
               <ProfilePage />
             </ProtectedRoute>
           } />
+
         </Routes>
 
         {/* ChatBot - visible on ALL pages including login/register - Member 2 Innovation */}

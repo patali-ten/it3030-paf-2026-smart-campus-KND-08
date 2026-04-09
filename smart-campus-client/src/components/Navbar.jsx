@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom' // Added Link here
+import { useNavigate, Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import NotificationPanel from './NotificationPanel'
 import {
@@ -11,6 +11,7 @@ import {
 const NAV_LINKS = {
   USER: [
     { label: 'Dashboard', href: '/user/dashboard', icon: LayoutDashboard },
+    { label: 'Resources', href: '/user/resources', icon: Building2 },
     { label: 'Bookings', href: '/user/bookings', icon: CalendarCheck },
     { label: 'My Tickets', href: '/user/tickets', icon: Wrench },
     { label: 'Notifications', href: '/user/notifications', icon: Bell },
@@ -33,6 +34,7 @@ const NAV_LINKS = {
 export default function Navbar() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const links = NAV_LINKS[user?.role] || []
@@ -47,6 +49,9 @@ export default function Navbar() {
     TECHNICIAN: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
     USER: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30',
   }
+
+  // Check if current path matches the link
+  const isActive = (href) => location.pathname === href
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-b border-slate-800">
@@ -66,7 +71,11 @@ export default function Navbar() {
             <Link
               key={href}
               to={href}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 text-sm transition-all duration-200"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition-all duration-200
+                ${isActive(href)
+                  ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-medium'
+                  : 'text-slate-400 hover:text-white hover:bg-white/10'
+                }`}
             >
               <Icon size={15} />
               {label}
@@ -122,7 +131,11 @@ export default function Navbar() {
             <Link
               key={href}
               to={href}
-              className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/10 text-sm"
+              className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm transition-all
+                ${isActive(href)
+                  ? 'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-medium'
+                  : 'text-slate-400 hover:text-white hover:bg-white/10'
+                }`}
               onClick={() => setMobileOpen(false)}
             >
               <Icon size={16} />
