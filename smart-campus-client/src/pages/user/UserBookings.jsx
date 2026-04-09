@@ -15,7 +15,6 @@ const STATUS_STYLES = {
   CANCELLED: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
 }
 
-// Resource type display labels matching Member 1's ResourceType enum
 const TYPE_LABELS = {
   LECTURE_HALL: '🏛️ Lecture Halls',
   LAB:          '🔬 Labs',
@@ -24,6 +23,10 @@ const TYPE_LABELS = {
 }
 
 const FILTERS = ['ALL', 'PENDING', 'APPROVED', 'REJECTED', 'CANCELLED']
+
+// Inline field error component
+const FieldError = ({ msg }) =>
+  msg ? <p className="text-rose-400 text-xs mt-1">{msg}</p> : null
 
 export default function UserBookings() {
   const { user } = useAuth()
@@ -34,8 +37,8 @@ export default function UserBookings() {
   const [loadingBookings, setLoadingBookings] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [conflicts, setConflicts] = useState([])
+  const [formErrors, setFormErrors] = useState({})
 
-  // Resources loaded dynamically from Member 1's API
   const [resources, setResources] = useState([])
   const [loadingResources, setLoadingResources] = useState(true)
   const [selectedResource, setSelectedResource] = useState(null)
@@ -50,13 +53,11 @@ export default function UserBookings() {
     expectedAttendees: '',
   })
 
-  // Load resources and bookings when page opens
   useEffect(() => {
     fetchResources()
     fetchBookings()
   }, [])
 
-  // Filter bookings when filter tab changes
   useEffect(() => {
     if (activeFilter === 'ALL') {
       setFilteredBookings(bookings)
@@ -65,12 +66,10 @@ export default function UserBookings() {
     }
   }, [activeFilter, bookings])
 
-  // Check availability when resource or date changes
   useEffect(() => {
     if (form.resourceId && form.bookingDate) fetchAvailability()
   }, [form.resourceId, form.bookingDate])
 
-  // Load ACTIVE resources from Member 1's API
   const fetchResources = async () => {
     setLoadingResources(true)
     try {
@@ -114,13 +113,14 @@ export default function UserBookings() {
       resourceId: id,
       resourceName: resource?.name || '',
     }))
+    setFormErrors(prev => ({ ...prev, resourceId: undefined }))
   }
 
   const handleChange = (e) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
+    setFormErrors(prev => ({ ...prev, [e.target.name]: undefined }))
   }
 
-  // Check if selected time is within resource availability window
   const isTimeAvailable = () => {
     if (!selectedResource) return true
     if (!selectedResource.availabilityStart || !selectedResource.availabilityEnd) return true
@@ -132,23 +132,80 @@ export default function UserBookings() {
     return start >= availStart && end <= availEnd
   }
 
+  // ─── Full frontend validation ───────────────────────────────────────────────
+  const validate = () => {
+    const errors = {}
+
+    if (!form.resourceId) {
+      errors.resourceId = 'Please select a resource.'
+    }
+
+    if (!form.bookingDate) {
+      errors.bookingDate = 'Please select a date.'
+    }
+
+    if (!form.startTime) {
+      errors.startTime = 'Start time is required.'
+    }
+
+    if (!form.endTime) {
+      errors.endTime = 'End time is required.'
+    }
+
+    if (form.startTime && form.endTime) {
+      if (form.startTime >= form.endTime) {
+        errors.endTime = 'End time must be after start time.'
+      } else {
+        // Minimum 15-minute booking duration check
+        const [sh, sm] = form.startTime.split(':').map(Number)
+        const [eh, em] = form.endTime.split(':').map(Number)
+        const diffMins = (eh * 60 + em) - (sh * 60 + sm)
+        if (diffMins < 15) {
+          errors.endTime = 'Booking must be at least 15 minutes long.'
+        }
+      }
+    }
+
+    // Availability window check (shows inline instead of toast)
+    if (form.startTime && form.endTime && !errors.startTime && !errors.endTime) {
+      if (!isTimeAvailable()) {
+        errors.startTime =
+          `Resource only available ${selectedResource.availabilityStart?.substring(0, 5)} – ${selectedResource.availabilityEnd?.substring(0, 5)}.`
+      }
+    }
+
+    if (!form.purpose.trim()) {
+      errors.purpose = 'Purpose is required.'
+    } else if (form.purpose.trim().length < 5) {
+      errors.purpose = 'Purpose must be at least 5 characters.'
+    }
+
+    // Attendee count vs capacity check
+    if (
+      selectedResource &&
+      selectedResource.type !== 'EQUIPMENT' &&
+      form.expectedAttendees
+    ) {
+      const count = parseInt(form.expectedAttendees)
+      if (isNaN(count) || count < 1) {
+        errors.expectedAttendees = 'Must be at least 1 attendee.'
+      } else if (selectedResource.capacity && count > selectedResource.capacity) {
+        errors.expectedAttendees = `Exceeds this resource's capacity of ${selectedResource.capacity}.`
+      }
+    }
+
+    return errors
+  }
+  // ────────────────────────────────────────────────────────────────────────────
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (form.startTime >= form.endTime) {
-      toast.error('End time must be after start time')
-      return
-    }
+    const errors = validate()
+    setFormErrors(errors)
 
-    // Warn if outside availability window
-    if (!isTimeAvailable()) {
-      toast.error(
-        `This resource is only available from ` +
-        `${selectedResource.availabilityStart?.substring(0, 5)} to ` +
-        `${selectedResource.availabilityEnd?.substring(0, 5)}`
-      )
-      return
-    }
+    // Stop here and show inline errors — no toast for form errors
+    if (Object.keys(errors).length > 0) return
 
     setSubmitting(true)
     try {
@@ -167,6 +224,7 @@ export default function UserBookings() {
       })
       setSelectedResource(null)
       setConflicts([])
+      setFormErrors({})
       fetchBookings()
     } catch (err) {
       if (err.response?.status === 409) {
@@ -204,7 +262,6 @@ export default function UserBookings() {
   const countByStatus = (status) =>
     bookings.filter(b => b.status === status).length
 
-  // Group resources by type for the dropdown
   const groupedResources = resources.reduce((groups, resource) => {
     const type = resource.type
     if (!groups[type]) groups[type] = []
@@ -213,6 +270,10 @@ export default function UserBookings() {
   }, {})
 
   const today = new Date().toISOString().split('T')[0]
+
+  // Helper: border class based on error state
+  const fieldBorder = (field) =>
+    formErrors[field] ? 'border-rose-500' : 'border-slate-700'
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -243,22 +304,20 @@ export default function UserBookings() {
                 New Booking Request
               </h2>
               <button
-                onClick={() => setShowForm(false)}
+                onClick={() => { setShowForm(false); setFormErrors({}) }}
                 className="text-slate-500 hover:text-white transition-colors"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} noValidate className="space-y-4">
 
               {/* Resource Selector */}
               <div>
                 <label className="block text-sm font-medium text-slate-400 mb-1.5">
                   Select Resource *
                 </label>
-
-                {/* Loading spinner while resources load */}
                 {loadingResources ? (
                   <div className="flex items-center gap-2 text-slate-500 text-sm py-2">
                     <Loader size={16} className="animate-spin" />
@@ -274,8 +333,7 @@ export default function UserBookings() {
                       name="resourceId"
                       value={form.resourceId}
                       onChange={handleResourceChange}
-                      required
-                      className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 appearance-none focus:outline-none focus:border-indigo-500 transition-colors"
+                      className={`w-full bg-slate-800 border ${fieldBorder('resourceId')} text-white rounded-xl px-4 py-2.5 appearance-none focus:outline-none focus:border-indigo-500 transition-colors`}
                     >
                       <option value="">-- Choose a resource --</option>
                       {Object.entries(groupedResources).map(([type, typeResources]) => (
@@ -296,9 +354,10 @@ export default function UserBookings() {
                     />
                   </div>
                 )}
+                <FieldError msg={formErrors.resourceId} />
               </div>
 
-              {/* Resource details card - shows after selecting */}
+              {/* Resource details card */}
               {selectedResource && (
                 <div className="bg-slate-800/50 rounded-xl p-3 text-sm space-y-1">
                   {selectedResource.location && (
@@ -336,10 +395,14 @@ export default function UserBookings() {
                   Booking Date *
                 </label>
                 <input
-                  type="date" name="bookingDate" value={form.bookingDate}
-                  onChange={handleChange} min={today} required
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors"
+                  type="date"
+                  name="bookingDate"
+                  value={form.bookingDate}
+                  onChange={handleChange}
+                  min={today}
+                  className={`w-full bg-slate-800 border ${fieldBorder('bookingDate')} text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors`}
                 />
+                <FieldError msg={formErrors.bookingDate} />
               </div>
 
               {/* Conflict Warning */}
@@ -366,20 +429,26 @@ export default function UserBookings() {
                     Start Time *
                   </label>
                   <input
-                    type="time" name="startTime" value={form.startTime}
-                    onChange={handleChange} required
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors"
+                    type="time"
+                    name="startTime"
+                    value={form.startTime}
+                    onChange={handleChange}
+                    className={`w-full bg-slate-800 border ${fieldBorder('startTime')} text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors`}
                   />
+                  <FieldError msg={formErrors.startTime} />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1.5">
                     End Time *
                   </label>
                   <input
-                    type="time" name="endTime" value={form.endTime}
-                    onChange={handleChange} required
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors"
+                    type="time"
+                    name="endTime"
+                    value={form.endTime}
+                    onChange={handleChange}
+                    className={`w-full bg-slate-800 border ${fieldBorder('endTime')} text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors`}
                   />
+                  <FieldError msg={formErrors.endTime} />
                 </div>
               </div>
 
@@ -389,34 +458,49 @@ export default function UserBookings() {
                   Purpose *
                 </label>
                 <input
-                  type="text" name="purpose" value={form.purpose}
+                  type="text"
+                  name="purpose"
+                  value={form.purpose}
                   onChange={handleChange}
                   placeholder="e.g. CS3030 Lecture, Project Meeting"
-                  required maxLength={255}
-                  className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600"
+                  maxLength={255}
+                  className={`w-full bg-slate-800 border ${fieldBorder('purpose')} text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600`}
                 />
+                <div className="flex items-center justify-between mt-1">
+                  <FieldError msg={formErrors.purpose} />
+                  <span className="text-slate-600 text-xs ml-auto">
+                    {form.purpose.length}/255
+                  </span>
+                </div>
               </div>
 
-              {/* Expected Attendees - hide for equipment */}
+              {/* Expected Attendees */}
               {selectedResource && selectedResource.type !== 'EQUIPMENT' && (
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-1.5">
                     Expected Attendees
-                    {selectedResource.capacity && ` (max: ${selectedResource.capacity})`}
+                    {selectedResource.capacity && (
+                      <span className="text-slate-500 font-normal"> (max: {selectedResource.capacity})</span>
+                    )}
                   </label>
                   <input
-                    type="number" name="expectedAttendees"
+                    type="number"
+                    name="expectedAttendees"
                     value={form.expectedAttendees}
                     onChange={handleChange}
                     min={1}
                     max={selectedResource.capacity || undefined}
-                    className="w-full bg-slate-800 border border-slate-700 text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors"
+                    placeholder="e.g. 30"
+                    className={`w-full bg-slate-800 border ${fieldBorder('expectedAttendees')} text-white rounded-xl px-4 py-2.5 focus:outline-none focus:border-indigo-500 transition-colors placeholder-slate-600`}
                   />
+                  <FieldError msg={formErrors.expectedAttendees} />
                 </div>
               )}
 
+              {/* Submit */}
               <button
-                type="submit" disabled={submitting}
+                type="submit"
+                disabled={submitting}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 text-white font-semibold py-3 rounded-xl transition-colors"
               >
                 {submitting ? 'Submitting...' : 'Submit Booking Request'}
@@ -507,7 +591,6 @@ export default function UserBookings() {
 
                     {/* Action buttons */}
                     <div className="flex items-center gap-2 ml-4">
-                      {/* Cancel - PENDING or APPROVED */}
                       {(booking.status === 'PENDING' || booking.status === 'APPROVED') && (
                         <button
                           onClick={() => handleCancel(booking.id)}
@@ -516,7 +599,6 @@ export default function UserBookings() {
                           Cancel
                         </button>
                       )}
-                      {/* Delete - REJECTED or CANCELLED */}
                       {(booking.status === 'REJECTED' || booking.status === 'CANCELLED') && (
                         <button
                           onClick={() => handleDelete(booking.id)}
