@@ -47,3 +47,10 @@ export const checkAvailability = (resourceId, date) =>
     baseURL: FULL_BASE,
     params: { resourceId, date }
   })
+
+// Get all ACTIVE resources from Member 1's API
+export const getActiveResources = () =>
+  api.get('/resources', {
+    baseURL: 'http://localhost:8080/api',
+    params: { status: 'ACTIVE' }
+  })
