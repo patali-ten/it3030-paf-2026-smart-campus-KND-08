@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import Navbar from '../../components/Navbar'
 import { getAssignedTickets, updateTicketStatus, addComment, editComment, deleteComment } from '../../api/tickets'
 import { Wrench, ChevronDown, Send, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -27,8 +28,13 @@ const PRIORITY_COLORS = {
   CRITICAL: 'text-red-400',
 }
 
-export default function TechnicianTicketsPage() {
+// ─────────────────────────────────────────────────────────────────────────────
+// TechnicianTicketsContent — logic + UI only, no Navbar, no page shell
+// Used as a widget inside TechnicianDashboard AND inside the full page below
+// ─────────────────────────────────────────────────────────────────────────────
+export function TechnicianTicketsContent() {
   const { user } = useAuth()
+
   const [tickets, setTickets]               = useState([])
   const [loading, setLoading]               = useState(true)
   const [selectedTicket, setSelectedTicket] = useState(null)
@@ -169,7 +175,7 @@ export default function TechnicianTicketsPage() {
                   >
                     <p className="text-slate-300 text-sm">{ticket.description}</p>
 
-                    {/* ✅ Attachments */}
+                    {/* Attachments */}
                     {ticket.attachments?.length > 0 && (
                       <div>
                         <p className="text-slate-400 text-xs mb-2">
@@ -250,7 +256,6 @@ export default function TechnicianTicketsPage() {
                       <p className="text-slate-400 text-xs mb-2">
                         Comments ({ticket.comments?.length || 0})
                       </p>
-
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {ticket.comments?.length === 0 && (
                           <p className="text-slate-600 text-xs text-center py-2">No comments yet.</p>
@@ -276,7 +281,6 @@ export default function TechnicianTicketsPage() {
                                 </div>
                               )}
                             </div>
-
                             {editingComment?.id === c.id ? (
                               <div className="flex gap-2 mt-1">
                                 <input
@@ -330,6 +334,20 @@ export default function TechnicianTicketsPage() {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TechnicianTicketsPage — full standalone page, used by /technician/tickets route
+// ─────────────────────────────────────────────────────────────────────────────
+export default function TechnicianTicketsPage() {
+  return (
+    <div className="min-h-screen bg-slate-950">
+      <Navbar />
+      <div className="max-w-3xl mx-auto px-4 pt-24 pb-16">
+        <TechnicianTicketsContent />
+      </div>
     </div>
   )
 }

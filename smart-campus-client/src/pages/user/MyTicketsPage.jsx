@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import Navbar from '../../components/Navbar'
 import {
   getMyTickets,
   createTicket,
@@ -13,8 +14,8 @@ import { Wrench, Plus, ChevronDown, Send, Paperclip, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const CATEGORIES = [
-  'ELECTRICAL','PLUMBING','IT_HARDWARE','IT_SOFTWARE',
-  'HVAC','FURNITURE','SECURITY','CLEANING','OTHER',
+  'ELECTRICAL', 'PLUMBING', 'IT_HARDWARE', 'IT_SOFTWARE',
+  'HVAC', 'FURNITURE', 'SECURITY', 'CLEANING', 'OTHER',
 ]
 const PRIORITIES = ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL']
 
@@ -42,29 +43,23 @@ const EMPTY_FORM = {
   contactDetails: '',
 }
 
-export default function MyTicketsPage() {
+// ─────────────────────────────────────────────────────────────
+// Inner component — reusable in dashboard embed AND full page
+// ─────────────────────────────────────────────────────────────
+export function MyTicketsContent() {
   const { user } = useAuth()
 
-  // ── State ────────────────────────────────────────────────────────────────
-  const [tickets, setTickets]             = useState([])
-  const [loading, setLoading]             = useState(true)
-  const [showForm, setShowForm]           = useState(false)
-  const [form, setForm]                   = useState(EMPTY_FORM)
-  const [submitting, setSubmitting]       = useState(false)
-
-  // Attachment state (during ticket creation)
-  const [attachmentFiles, setAttachmentFiles] = useState([]) // max 3 File objects
-
-  // Which ticket card is expanded
+  const [tickets, setTickets]               = useState([])
+  const [loading, setLoading]               = useState(true)
+  const [showForm, setShowForm]             = useState(false)
+  const [form, setForm]                     = useState(EMPTY_FORM)
+  const [submitting, setSubmitting]         = useState(false)
+  const [attachmentFiles, setAttachmentFiles] = useState([])
   const [selectedTicket, setSelectedTicket] = useState(null)
-
-  // Comment input per ticket
-  const [comment, setComment]             = useState('')
-
-  // Comment being edited  { id, content }
+  const [comment, setComment]               = useState('')
   const [editingComment, setEditingComment] = useState(null)
 
-  // ── Fetch ────────────────────────────────────────────────────────────────
+  // ── Fetch ────────────────────────────────────────────────────
   const fetchTickets = async () => {
     try {
       setLoading(true)
@@ -79,19 +74,16 @@ export default function MyTicketsPage() {
 
   useEffect(() => { fetchTickets() }, [])
 
-  // ── Create ticket ────────────────────────────────────────────────────────
+  // ── Create ticket ─────────────────────────────────────────────
   const handleCreate = async (e) => {
     e.preventDefault()
     try {
       setSubmitting(true)
       const res = await createTicket({ ...form, reporterId: user.userId })
       const newTicketId = res.data.id
-
-      // Upload each attachment (max 3)
       for (const file of attachmentFiles) {
         await addAttachment(newTicketId, file)
       }
-
       toast.success('Ticket created!')
       setShowForm(false)
       setForm(EMPTY_FORM)
@@ -104,19 +96,16 @@ export default function MyTicketsPage() {
     }
   }
 
-  // ── Attachment file picker (enforces max 3) ───────────────────────────────
   const handleFileChange = (e) => {
     const picked = Array.from(e.target.files)
-    const combined = [...attachmentFiles, ...picked].slice(0, 3)
-    setAttachmentFiles(combined)
+    setAttachmentFiles(prev => [...prev, ...picked].slice(0, 3))
     e.target.value = ''
   }
 
-  const removeAttachmentFile = (index) => {
+  const removeAttachmentFile = (index) =>
     setAttachmentFiles(prev => prev.filter((_, i) => i !== index))
-  }
 
-  // ── Delete existing attachment on a saved ticket ─────────────────────────
+  // ── Attachment on saved ticket ────────────────────────────────
   const handleDeleteAttachment = async (attachmentId) => {
     try {
       await deleteAttachment(attachmentId, user.userId)
@@ -127,7 +116,7 @@ export default function MyTicketsPage() {
     }
   }
 
-  // ── Add comment ───────────────────────────────────────────────────────────
+  // ── Comments ──────────────────────────────────────────────────
   const handleComment = async () => {
     if (!comment.trim() || !selectedTicket) return
     try {
@@ -140,7 +129,6 @@ export default function MyTicketsPage() {
     }
   }
 
-  // ── Edit comment ──────────────────────────────────────────────────────────
   const handleEditComment = async (commentId) => {
     if (!editingComment?.content.trim()) return
     try {
@@ -153,7 +141,6 @@ export default function MyTicketsPage() {
     }
   }
 
-  // ── Delete comment ────────────────────────────────────────────────────────
   const handleDeleteComment = async (commentId) => {
     try {
       await deleteComment(commentId, user.userId)
@@ -164,7 +151,7 @@ export default function MyTicketsPage() {
     }
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
 
@@ -234,7 +221,7 @@ export default function MyTicketsPage() {
               onChange={e => setForm({ ...form, contactDetails: e.target.value })}
             />
 
-            {/* Attachments (Preview Thumbnails) */}
+            {/* Attachments */}
             <div>
               <p className="text-slate-400 text-xs mb-1">
                 Attachments — up to 3 images
@@ -242,7 +229,6 @@ export default function MyTicketsPage() {
                   <span className="text-amber-400 ml-1">({attachmentFiles.length}/3 selected)</span>
                 )}
               </p>
-
               {attachmentFiles.length > 0 && (
                 <div className="flex gap-2 flex-wrap mb-2">
                   {attachmentFiles.map((f, i) => (
@@ -250,7 +236,7 @@ export default function MyTicketsPage() {
                       <img
                         src={URL.createObjectURL(f)}
                         alt={f.name}
-                        className="w-24 h-24 object-cover rounded-lg border border-slate-700 cursor-pointer hover:scale-105 transition"
+                        className="w-24 h-24 object-cover rounded-lg border border-slate-700"
                       />
                       <button
                         onClick={() => removeAttachmentFile(i)}
@@ -262,17 +248,11 @@ export default function MyTicketsPage() {
                   ))}
                 </div>
               )}
-
               {attachmentFiles.length < 3 && (
                 <label className="flex items-center gap-2 cursor-pointer w-full bg-slate-900 border border-slate-700 text-slate-400 hover:text-white rounded-xl px-4 py-2 text-sm transition">
                   <Paperclip size={14} />
                   Choose image
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                  />
+                  <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>
               )}
             </div>
@@ -316,7 +296,7 @@ export default function MyTicketsPage() {
                 setEditingComment(null)
               }}
             >
-              {/* Summary */}
+              {/* Summary row */}
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -343,7 +323,7 @@ export default function MyTicketsPage() {
                 />
               </div>
 
-              {/* Expanded */}
+              {/* Expanded detail */}
               {selectedTicket?.id === ticket.id && (
                 <div
                   className="mt-4 border-t border-slate-800 pt-4 space-y-4"
@@ -365,7 +345,7 @@ export default function MyTicketsPage() {
                     </div>
                   )}
 
-                  {/* Attachments Thumbnails */}
+                  {/* Attachments */}
                   {ticket.attachments?.length > 0 && (
                     <div>
                       <p className="text-slate-400 text-xs mb-2">
@@ -382,10 +362,7 @@ export default function MyTicketsPage() {
                             />
                             {ticket.status === 'OPEN' && (
                               <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDeleteAttachment(a.id)
-                                }}
+                                onClick={e => { e.stopPropagation(); handleDeleteAttachment(a.id) }}
                                 className="absolute top-1 right-1 bg-black/60 rounded-full p-1 text-red-400 hover:text-red-300"
                               >
                                 <X size={12} />
@@ -402,7 +379,6 @@ export default function MyTicketsPage() {
                     <p className="text-slate-400 text-xs mb-2">
                       Comments ({ticket.comments?.length || 0})
                     </p>
-
                     <div className="space-y-2 max-h-40 overflow-y-auto">
                       {ticket.comments?.map(c => (
                         <div key={c.id} className="bg-slate-800 rounded-xl p-3">
@@ -425,7 +401,6 @@ export default function MyTicketsPage() {
                               </div>
                             )}
                           </div>
-
                           {editingComment?.id === c.id ? (
                             <div className="flex gap-2 mt-2">
                               <input
@@ -453,7 +428,7 @@ export default function MyTicketsPage() {
                       ))}
                     </div>
 
-                    {/* Add comment input */}
+                    {/* Add comment */}
                     <div className="flex gap-2 mt-3">
                       <input
                         className="flex-1 bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm"
@@ -476,6 +451,20 @@ export default function MyTicketsPage() {
           ))}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+// Full standalone page — used by /user/tickets route
+// ─────────────────────────────────────────────────────────────
+export default function MyTicketsPage() {
+  return (
+    <div className="min-h-screen bg-slate-950">
+      <Navbar />
+      <div className="max-w-3xl mx-auto px-4 pt-24 pb-16">
+        <MyTicketsContent />
+      </div>
     </div>
   )
 }
