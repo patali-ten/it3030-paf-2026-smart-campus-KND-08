@@ -9,6 +9,7 @@ export default function Login() {
   const { login } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
+  const [errors, setErrors] = useState({})
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
 
@@ -18,8 +19,37 @@ export default function Login() {
     TECHNICIAN: '/technician/dashboard',
   }
 
+  // ✅ Frontend validation function
+  const validate = () => {
+    const newErrors = {}
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    if (!form.email.trim()) {
+      newErrors.email = 'Email is required'
+    } else if (!emailRegex.test(form.email)) {
+      newErrors.email = 'Enter a valid email address'
+    }
+
+    if (!form.password) {
+      newErrors.password = 'Password is required'
+    } else if (form.password.length < 3) {
+      newErrors.password = 'Password must be at least 3 characters'
+    }
+
+    return newErrors
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // ✅ Run validation before API call
+    const validationErrors = validate()
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors)
+      return
+    }
+    setErrors({})
+
     setLoading(true)
     try {
       const res = await loginUser(form)
@@ -27,7 +57,13 @@ export default function Login() {
       toast.success(`Welcome back, ${res.data.name}!`)
       navigate(DASHBOARD_ROUTES[res.data.role] || '/user/dashboard')
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Invalid email or password')
+      // ✅ Handle backend field-level errors too
+      const backendErrors = err.response?.data?.errors
+      if (backendErrors) {
+        setErrors(backendErrors)
+      } else {
+        toast.error(err.response?.data?.error || 'Invalid email or password')
+      }
     } finally {
       setLoading(false)
     }
@@ -41,7 +77,6 @@ export default function Login() {
     <div className="min-h-screen bg-slate-950 flex">
       {/* Left Panel — Branding */}
       <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 flex-col justify-between p-12 relative overflow-hidden">
-        {/* Background grid */}
         <div className="absolute inset-0 opacity-10"
           style={{
             backgroundImage: 'linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)',
@@ -53,7 +88,7 @@ export default function Login() {
             <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
               <Building2 size={20} className="text-white" />
             </div>
-            <span className="text-white font-bold text-xl">SmartCampus</span>
+            <span className="text-white font-bold text-xl">SilverWood University</span>
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Manage your<br />
@@ -77,7 +112,6 @@ export default function Login() {
       {/* Right Panel — Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
               <Building2 size={16} className="text-white" />
@@ -88,7 +122,6 @@ export default function Login() {
           <h2 className="text-2xl font-bold text-white mb-1">Welcome back</h2>
           <p className="text-slate-400 text-sm mb-8">Sign in to your account to continue</p>
 
-          {/* Google Login */}
           <button
             onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 transition-colors mb-6"
@@ -102,14 +135,12 @@ export default function Login() {
             Continue with Google
           </button>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 mb-6">
             <div className="flex-1 h-px bg-slate-800" />
             <span className="text-slate-600 text-xs">or sign in with email</span>
             <div className="flex-1 h-px bg-slate-800" />
           </div>
 
-          {/* Email/Password Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-slate-400 text-xs font-medium block mb-1.5">Email</label>
@@ -117,13 +148,19 @@ export default function Login() {
                 <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type="email"
-                  required
                   value={form.email}
-                  onChange={e => setForm({ ...form, email: e.target.value })}
+                  onChange={e => {
+                    setForm({ ...form, email: e.target.value })
+                    // ✅ Clear error as user types
+                    if (errors.email) setErrors(prev => ({ ...prev, email: '' }))
+                  }}
                   placeholder="you@campus.lk"
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-600"
+                  className={`w-full bg-slate-900 border text-white rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-colors placeholder:text-slate-600
+                    ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-indigo-500'}`}
                 />
               </div>
+              {/* ✅ Inline error message */}
+              {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
             </div>
 
             <div>
@@ -132,11 +169,15 @@ export default function Login() {
                 <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                 <input
                   type={showPass ? 'text' : 'password'}
-                  required
                   value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })}
+                  onChange={e => {
+                    setForm({ ...form, password: e.target.value })
+                    // ✅ Clear error as user types
+                    if (errors.password) setErrors(prev => ({ ...prev, password: '' }))
+                  }}
                   placeholder="••••••••"
-                  className="w-full bg-slate-900 border border-slate-700 text-white rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-600"
+                  className={`w-full bg-slate-900 border text-white rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none transition-colors placeholder:text-slate-600
+                    ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-indigo-500'}`}
                 />
                 <button
                   type="button"
@@ -146,6 +187,8 @@ export default function Login() {
                   {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
+              {/* ✅ Inline error message */}
+              {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
             </div>
 
             <button
