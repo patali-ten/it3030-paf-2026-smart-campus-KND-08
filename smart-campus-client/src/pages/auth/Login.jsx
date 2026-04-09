@@ -2,8 +2,15 @@ import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { loginUser } from '../../api/auth'
-import { Building2, Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, GraduationCap } from 'lucide-react'
 import toast from 'react-hot-toast'
+import campusImg from '../../assets/campus.jpg'
+
+const DASHBOARD_ROUTES = {
+  ADMIN: '/admin/dashboard',
+  USER: '/user/dashboard',
+  TECHNICIAN: '/technician/dashboard',
+}
 
 export default function Login() {
   const { login } = useAuth()
@@ -13,43 +20,21 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const DASHBOARD_ROUTES = {
-    ADMIN: '/admin/dashboard',
-    USER: '/user/dashboard',
-    TECHNICIAN: '/technician/dashboard',
-  }
-
-  // ✅ Frontend validation function
   const validate = () => {
-    const newErrors = {}
+    const e = {}
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-    if (!form.email.trim()) {
-      newErrors.email = 'Email is required'
-    } else if (!emailRegex.test(form.email)) {
-      newErrors.email = 'Enter a valid email address'
-    }
-
-    if (!form.password) {
-      newErrors.password = 'Password is required'
-    } else if (form.password.length < 3) {
-      newErrors.password = 'Password must be at least 3 characters'
-    }
-
-    return newErrors
+    if (!form.email.trim()) e.email = 'Email is required'
+    else if (!emailRegex.test(form.email)) e.email = 'Enter a valid email address'
+    if (!form.password) e.password = 'Password is required'
+    else if (form.password.length < 3) e.password = 'Password must be at least 3 characters'
+    return e
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-
-    // ✅ Run validation before API call
-    const validationErrors = validate()
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      return
-    }
+  const handleSubmit = async (ev) => {
+    ev.preventDefault()
+    const ve = validate()
+    if (Object.keys(ve).length) { setErrors(ve); return }
     setErrors({})
-
     setLoading(true)
     try {
       const res = await loginUser(form)
@@ -57,74 +42,119 @@ export default function Login() {
       toast.success(`Welcome back, ${res.data.name}!`)
       navigate(DASHBOARD_ROUTES[res.data.role] || '/user/dashboard')
     } catch (err) {
-      // ✅ Handle backend field-level errors too
-      const backendErrors = err.response?.data?.errors
-      if (backendErrors) {
-        setErrors(backendErrors)
-      } else {
-        toast.error(err.response?.data?.error || 'Invalid email or password')
-      }
-    } finally {
-      setLoading(false)
-    }
+      const be = err.response?.data?.errors
+      if (be) setErrors(be)
+      else toast.error(err.response?.data?.error || 'Invalid email or password')
+    } finally { setLoading(false) }
   }
 
-  const handleGoogleLogin = () => {
+  const handleGoogle = () => {
     window.location.href = 'http://localhost:8080/oauth2/authorization/google'
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 flex">
-      {/* Left Panel — Branding */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 flex-col justify-between p-12 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10"
+    <div className="min-h-screen flex" style={{ background: 'var(--navy-dark)' }}>
+
+      {/* ── Left Panel — Campus Photo Hero ── */}
+      <div className="hidden lg:flex w-[55%] relative overflow-hidden flex-col justify-between">
+
+        {/* Photo */}
+        <img
+          src={campusImg}
+          alt="SilverWood University Campus"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+
+        {/* Gradient overlays — navy tint + bottom fade */}
+        <div
+          className="absolute inset-0"
           style={{
-            backgroundImage: 'linear-gradient(rgba(99,102,241,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.3) 1px, transparent 1px)',
-            backgroundSize: '40px 40px'
+            background: 'linear-gradient(135deg, rgba(17,29,51,0.82) 0%, rgba(27,42,74,0.65) 50%, rgba(17,29,51,0.75) 100%)',
           }}
         />
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-16">
-            <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-              <Building2 size={20} className="text-white" />
+        {/* Bottom fade for text legibility */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-64"
+          style={{ background: 'linear-gradient(to top, rgba(17,29,51,0.95), transparent)' }}
+        />
+
+        {/* Top — Logo */}
+        <div className="relative z-10 p-10">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-11 h-11 rounded-xl flex items-center justify-center"
+              style={{ background: 'var(--gold)' }}
+            >
+              <GraduationCap size={22} className="text-white" />
             </div>
-            <span className="text-white font-bold text-xl">SilverWood University</span>
+            <div>
+              <p className="text-white font-semibold text-lg leading-none">SilverWood</p>
+              <p style={{ color: 'var(--gold-light)', fontSize: '11px' }} className="uppercase tracking-widest">University</p>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Manage your<br />
-            <span className="text-indigo-400">campus operations</span><br />
-            all in one place.
-          </h1>
-          <p className="text-slate-400 text-lg leading-relaxed">
-            Book facilities, manage maintenance tickets,<br />
-            and stay updated in real time.
-          </p>
         </div>
-        <div className="relative z-10 flex gap-4">
-          {['Facilities', 'Bookings', 'Tickets', 'Notifications'].map(label => (
-            <span key={label} className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-slate-400">
-              {label}
-            </span>
-          ))}
+
+        {/* Bottom — Quote over photo */}
+        <div className="relative z-10 p-10">
+          <p
+            className="font-display text-4xl leading-snug text-white mb-4"
+            style={{ textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}
+          >
+            One platform.<br />
+            <span style={{ color: 'var(--gold-light)' }}>Every resource.</span><br />
+            Always ready.
+          </p>
+          <p className="text-white/60 text-sm leading-relaxed mb-8">
+            Book lecture halls, labs & equipment · Report maintenance issues<br />
+            Track tickets · Stay notified in real time
+          </p>
+          <div className="flex gap-2 flex-wrap">
+            {['Facilities', 'Bookings', 'Tickets', 'Notifications'].map(label => (
+              <span
+                key={label}
+                className="text-xs px-3 py-1.5 rounded-full font-medium"
+                style={{
+                  background: 'rgba(201,168,76,0.15)',
+                  border: '1px solid rgba(201,168,76,0.35)',
+                  color: 'var(--gold-light)',
+                }}
+              >
+                {label}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Right Panel — Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
+      {/* ── Right Panel — Form ── */}
+      <div
+        className="flex-1 flex items-center justify-center p-8"
+        style={{ background: 'var(--surface)' }}
+      >
         <div className="w-full max-w-md">
+
+          {/* Mobile logo */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <Building2 size={16} className="text-white" />
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'var(--gold)' }}>
+              <GraduationCap size={18} className="text-white" />
             </div>
-            <span className="text-white font-bold">SmartCampus</span>
+            <span className="font-semibold text-lg" style={{ color: 'var(--navy)' }}>SilverWood University</span>
           </div>
 
-          <h2 className="text-2xl font-bold text-white mb-1">Welcome back</h2>
-          <p className="text-slate-400 text-sm mb-8">Sign in to your account to continue</p>
+          <h2 className="font-display text-3xl mb-1" style={{ color: 'var(--navy)' }}>Welcome back</h2>
+          <p className="text-sm mb-8" style={{ color: 'var(--text-muted)' }}>
+            Sign in to access the Smart Campus Operations Hub
+          </p>
 
+          {/* Google */}
           <button
-            onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl bg-white text-slate-900 font-semibold hover:bg-slate-100 transition-colors mb-6"
+            onClick={handleGoogle}
+            className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-sm mb-5 transition-all hover:shadow-md"
+            style={{
+              background: 'white',
+              border: '1.5px solid var(--border)',
+              color: 'var(--text)',
+            }}
           >
             <svg viewBox="0 0 24 24" className="w-5 h-5">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -135,80 +165,89 @@ export default function Login() {
             Continue with Google
           </button>
 
-          <div className="flex items-center gap-3 mb-6">
-            <div className="flex-1 h-px bg-slate-800" />
-            <span className="text-slate-600 text-xs">or sign in with email</span>
-            <div className="flex-1 h-px bg-slate-800" />
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
+            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>or sign in with email</span>
+            <div className="flex-1 h-px" style={{ background: 'var(--border)' }} />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Email */}
             <div>
-              <label className="text-slate-400 text-xs font-medium block mb-1.5">Email</label>
+              <label className="text-xs font-semibold block mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Email Address
+              </label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type="email"
                   value={form.email}
-                  onChange={e => {
-                    setForm({ ...form, email: e.target.value })
-                    // ✅ Clear error as user types
-                    if (errors.email) setErrors(prev => ({ ...prev, email: '' }))
+                  onChange={e => { setForm({ ...form, email: e.target.value }); if (errors.email) setErrors(p => ({ ...p, email: '' })) }}
+                  placeholder="you@silverwood.edu"
+                  className="w-full rounded-xl pl-10 pr-4 py-3 text-sm transition-all outline-none"
+                  style={{
+                    background: 'white',
+                    border: `1.5px solid ${errors.email ? '#dc2626' : 'var(--border)'}`,
+                    color: 'var(--text)',
                   }}
-                  placeholder="you@campus.lk"
-                  className={`w-full bg-slate-900 border text-white rounded-xl pl-10 pr-4 py-3 text-sm focus:outline-none transition-colors placeholder:text-slate-600
-                    ${errors.email ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-indigo-500'}`}
+                  onFocus={e => !errors.email && (e.target.style.borderColor = 'var(--gold)')}
+                  onBlur={e => !errors.email && (e.target.style.borderColor = 'var(--border)')}
                 />
               </div>
-              {/* ✅ Inline error message */}
-              {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
 
+            {/* Password */}
             <div>
-              <label className="text-slate-400 text-xs font-medium block mb-1.5">Password</label>
+              <label className="text-xs font-semibold block mb-1.5 uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Password
+              </label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }} />
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={form.password}
-                  onChange={e => {
-                    setForm({ ...form, password: e.target.value })
-                    // ✅ Clear error as user types
-                    if (errors.password) setErrors(prev => ({ ...prev, password: '' }))
-                  }}
+                  onChange={e => { setForm({ ...form, password: e.target.value }); if (errors.password) setErrors(p => ({ ...p, password: '' })) }}
                   placeholder="••••••••"
-                  className={`w-full bg-slate-900 border text-white rounded-xl pl-10 pr-10 py-3 text-sm focus:outline-none transition-colors placeholder:text-slate-600
-                    ${errors.password ? 'border-red-500 focus:border-red-500' : 'border-slate-700 focus:border-indigo-500'}`}
+                  className="w-full rounded-xl pl-10 pr-10 py-3 text-sm transition-all outline-none"
+                  style={{
+                    background: 'white',
+                    border: `1.5px solid ${errors.password ? '#dc2626' : 'var(--border)'}`,
+                    color: 'var(--text)',
+                  }}
+                  onFocus={e => !errors.password && (e.target.style.borderColor = 'var(--gold)')}
+                  onBlur={e => !errors.password && (e.target.style.borderColor = 'var(--border)')}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
-                >
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: 'var(--text-muted)' }}>
+                  {showPass ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>
-              {/* ✅ Inline error message */}
-              {errors.password && <p className="text-red-400 text-xs mt-1">{errors.password}</p>}
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold transition-colors mt-2"
+              className="w-full py-3 rounded-xl font-semibold text-white text-sm transition-all hover:opacity-90 disabled:opacity-50 mt-2"
+              style={{ background: 'var(--navy)' }}
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                   Signing in...
                 </span>
-              ) : 'Sign in'}
+              ) : 'Sign In'}
             </button>
           </form>
 
-          <p className="text-slate-500 text-sm text-center mt-6">
+          <p className="text-sm text-center mt-6" style={{ color: 'var(--text-muted)' }}>
             Don't have an account?{' '}
-            <Link to="/register" className="text-indigo-400 hover:text-indigo-300 font-medium">
-              Register
+            <Link to="/register" className="font-semibold transition-colors hover:opacity-80" style={{ color: 'var(--gold-dim)' }}>
+              Register here
             </Link>
           </p>
         </div>
