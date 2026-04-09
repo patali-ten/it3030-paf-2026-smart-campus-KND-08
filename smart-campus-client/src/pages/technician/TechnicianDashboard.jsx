@@ -2,12 +2,14 @@ import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { useState, useEffect } from 'react'
 import { Wrench, Clock, CheckCircle, Bell, ArrowRight } from 'lucide-react'
-import TechnicianTicketsPage from './TechnicianTicketsPage'
+import { Link } from 'react-router-dom'
+// ✅ Named import — content only, no double Navbar
+import { TechnicianTicketsContent } from './TechnicianTicketsPage'
 import { getAssignedTickets } from '../../api/tickets'
 
 const ACTIONS = [
-  { label: 'My Assigned Tickets', desc: 'View and update your tickets', href: '/technician/tickets', icon: Wrench, color: 'from-amber-600 to-orange-800' },
-  { label: 'Notifications', desc: 'New assignments and updates', href: '/technician/notifications', icon: Bell, color: 'from-indigo-600 to-indigo-800' },
+  { label: 'My Assigned Tickets', desc: 'View and update your tickets',  href: '/technician/tickets',       icon: Wrench, color: 'from-amber-600 to-orange-800'  },
+  { label: 'Notifications',       desc: 'New assignments and updates',   href: '/technician/notifications', icon: Bell,   color: 'from-indigo-600 to-indigo-800' },
 ]
 
 export default function TechnicianDashboard() {
@@ -24,16 +26,16 @@ export default function TechnicianDashboard() {
     fetch()
   }, [])
 
-  const assigned = tickets.length
-  const inProgress = tickets.filter(t => t.status === 'IN_PROGRESS').length
+  const assigned      = tickets.length
+  const inProgress    = tickets.filter(t => t.status === 'IN_PROGRESS').length
   const resolvedToday = tickets.filter(t => {
     if (t.status !== 'RESOLVED') return false
     return new Date(t.updatedAt).toDateString() === new Date().toDateString()
   }).length
 
   const STAT_CARDS = [
-    { label: 'Assigned to Me', icon: Wrench,       color: 'text-amber-400',   bg: 'bg-amber-500/10',   value: assigned },
-    { label: 'In Progress',    icon: Clock,         color: 'text-blue-400',    bg: 'bg-blue-500/10',    value: inProgress },
+    { label: 'Assigned to Me', icon: Wrench,       color: 'text-amber-400',   bg: 'bg-amber-500/10',   value: assigned      },
+    { label: 'In Progress',    icon: Clock,         color: 'text-blue-400',    bg: 'bg-blue-500/10',    value: inProgress    },
     { label: 'Resolved Today', icon: CheckCircle,   color: 'text-emerald-400', bg: 'bg-emerald-500/10', value: resolvedToday },
   ]
 
@@ -49,6 +51,7 @@ export default function TechnicianDashboard() {
           <p className="text-slate-400 mt-1">Manage your assigned maintenance tickets.</p>
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-10">
           {STAT_CARDS.map(({ label, icon: Icon, color, bg, value }) => (
             <div key={label} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
@@ -61,20 +64,25 @@ export default function TechnicianDashboard() {
           ))}
         </div>
 
+        {/* Quick Actions — ✅ use Link instead of <a> for SPA navigation */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10">
           {ACTIONS.map(({ label, desc, href, icon: Icon, color }) => (
-            <a key={href} href={href}
-              className={`relative overflow-hidden bg-gradient-to-br ${color} rounded-2xl p-6 group hover:scale-[1.02] transition-transform`}>
+            <Link
+              key={href}
+              to={href}
+              className={`relative overflow-hidden bg-gradient-to-br ${color} rounded-2xl p-6 group hover:scale-[1.02] transition-transform`}
+            >
               <Icon size={28} className="text-white/80 mb-4" />
               <p className="text-white font-semibold">{label}</p>
               <p className="text-white/60 text-sm mt-1">{desc}</p>
               <ArrowRight size={18} className="absolute bottom-5 right-5 text-white/40 group-hover:text-white/80 transition-colors" />
-            </a>
+            </Link>
           ))}
         </div>
 
+        {/* ✅ Assigned Tickets widget — content only, no double Navbar */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-          <TechnicianTicketsPage />
+          <TechnicianTicketsContent />
         </div>
 
       </div>

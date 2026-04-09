@@ -28,6 +28,11 @@ import ChatBot from './components/ChatBot'
 import ResourceCatalogue from './pages/user/ResourceCatalogue'
 import AdminResources from './pages/admin/AdminResources'
 
+// Tickets - Member 3
+import MyTicketsPage from './pages/user/MyTicketsPage'
+import AdminTicketsPage from './pages/admin/AdminTicketsPage'
+import TechnicianTicketsPage from './pages/technician/TechnicianTicketsPage'
+
 export default function App() {
   return (
     <AuthProvider>
@@ -77,6 +82,20 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          {/* ✅ USER tickets route - Member 3 */}
+          <Route path="/user/tickets" element={
+            <ProtectedRoute allowedRoles={['USER']}>
+              <MyTicketsPage />
+            </ProtectedRoute>
+          } />
+
+          {/* USER resource route - Member 1 */}
+          <Route path="/user/resources" element={
+            <ProtectedRoute allowedRoles={['USER']}>
+              <ResourceCatalogue />
+            </ProtectedRoute>
+          } />
+
           {/* ADMIN routes */}
           <Route path="/admin/dashboard" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -100,11 +119,11 @@ export default function App() {
               <AdminBookingManager />
             </ProtectedRoute>
           } />
-          
-          {/* USER resource route - Member 1 */}
-          <Route path="/user/resources" element={
-            <ProtectedRoute allowedRoles={['USER']}>
-              <ResourceCatalogue />
+
+          {/* ✅ ADMIN tickets route - Member 3 */}
+          <Route path="/admin/tickets" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminTicketsPage />
             </ProtectedRoute>
           } />
 
@@ -114,7 +133,7 @@ export default function App() {
               <AdminResources />
             </ProtectedRoute>
           } />
-          
+
           {/* TECHNICIAN routes */}
           <Route path="/technician/dashboard" element={
             <ProtectedRoute allowedRoles={['TECHNICIAN']}>
@@ -132,9 +151,16 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          {/* ✅ TECHNICIAN tickets route - Member 3 */}
+          <Route path="/technician/tickets" element={
+            <ProtectedRoute allowedRoles={['TECHNICIAN']}>
+              <TechnicianTicketsPage />
+            </ProtectedRoute>
+          } />
+
         </Routes>
 
-        {/* ChatBot - visible on ALL pages including login/register - Member 2 Innovation */}
+        {/* ChatBot - visible on ALL pages - Member 2 Innovation */}
         <ChatBot />
 
       </BrowserRouter>

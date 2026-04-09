@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
+import Navbar from '../../components/Navbar'
 import {
   getAllTickets,
   updateTicketStatus,
@@ -10,8 +11,6 @@ import {
 } from '../../api/tickets'
 import { Wrench, ChevronDown, Send, Paperclip, X, User, MapPin, Tag, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-const STATUS_OPTIONS = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED', 'REJECTED']
 
 const STATUS_COLORS = {
   OPEN:        'bg-blue-500/20 text-blue-400 border border-blue-500/30',
@@ -36,30 +35,26 @@ const STATUS_FLOW = {
   REJECTED:    [],
 }
 
-export default function AdminTicketsPage() {
+// ─────────────────────────────────────────────────────────────────────────────
+// AdminTicketsContent — logic + UI only, no Navbar, no page shell
+// Used as a widget inside AdminDashboard AND inside the full page below
+// ─────────────────────────────────────────────────────────────────────────────
+export function AdminTicketsContent() {
   const { user } = useAuth()
 
-  const [tickets, setTickets]           = useState([])
-  const [loading, setLoading]           = useState(true)
+  const [tickets, setTickets]               = useState([])
+  const [loading, setLoading]               = useState(true)
   const [selectedTicket, setSelectedTicket] = useState(null)
-
-  // Status update form
-  const [statusForm, setStatusForm]     = useState({ status: '', rejectionReason: '', resolutionNote: '' })
-  const [updating, setUpdating]         = useState(false)
-
-  // Assign technician
-  const [assigneeId, setAssigneeId]     = useState('')
-
-  // Comments
-  const [comment, setComment]           = useState('')
+  const [statusForm, setStatusForm]         = useState({ status: '', rejectionReason: '', resolutionNote: '' })
+  const [updating, setUpdating]             = useState(false)
+  const [assigneeId, setAssigneeId]         = useState('')
+  const [comment, setComment]               = useState('')
   const [editingComment, setEditingComment] = useState(null)
-
-  // Filter / search
-  const [filterStatus, setFilterStatus] = useState('ALL')
+  const [filterStatus, setFilterStatus]     = useState('ALL')
   const [filterPriority, setFilterPriority] = useState('ALL')
-  const [search, setSearch]             = useState('')
+  const [search, setSearch]                 = useState('')
 
-  // ── Fetch ─────────────────────────────────────────────────────────────────
+  // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchTickets = async () => {
     try {
       setLoading(true)
@@ -74,7 +69,6 @@ export default function AdminTicketsPage() {
 
   useEffect(() => { fetchTickets() }, [])
 
-  // Sync selectedTicket with refreshed data
   useEffect(() => {
     if (selectedTicket) {
       const updated = tickets.find(t => t.id === selectedTicket.id)
@@ -82,7 +76,7 @@ export default function AdminTicketsPage() {
     }
   }, [tickets])
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleStatusUpdate = async (ticketId) => {
     if (!statusForm.status) return toast.error('Select a status')
     if (statusForm.status === 'REJECTED' && !statusForm.rejectionReason.trim())
@@ -157,7 +151,7 @@ export default function AdminTicketsPage() {
     }
   }
 
-  // ── Filtered tickets ──────────────────────────────────────────────────────
+  // ── Filter ─────────────────────────────────────────────────────────────────
   const filtered = tickets.filter(t => {
     const matchStatus   = filterStatus   === 'ALL' || t.status   === filterStatus
     const matchPriority = filterPriority === 'ALL' || t.priority === filterPriority
@@ -166,7 +160,7 @@ export default function AdminTicketsPage() {
     return matchStatus && matchPriority && matchSearch
   })
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
 
@@ -180,7 +174,7 @@ export default function AdminTicketsPage() {
         </h2>
       </div>
 
-      {/* ── Filters ── */}
+      {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <input
           className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm flex-1 min-w-[160px]"
@@ -210,7 +204,7 @@ export default function AdminTicketsPage() {
         </select>
       </div>
 
-      {/* ── Tickets List ── */}
+      {/* Tickets List */}
       {loading ? (
         <div className="text-center py-12 text-slate-500 text-sm">Loading tickets...</div>
       ) : filtered.length === 0 ? (
@@ -218,7 +212,7 @@ export default function AdminTicketsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map(ticket => {
-            const isExpanded = selectedTicket?.id === ticket.id
+            const isExpanded     = selectedTicket?.id === ticket.id
             const allowedStatuses = STATUS_FLOW[ticket.status] || []
 
             return (
@@ -226,7 +220,7 @@ export default function AdminTicketsPage() {
                 key={ticket.id}
                 className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden hover:border-slate-500 transition"
               >
-                {/* ── Summary Row (clickable) ── */}
+                {/* Summary Row */}
                 <div
                   className="p-4 cursor-pointer"
                   onClick={() => {
@@ -239,7 +233,6 @@ export default function AdminTicketsPage() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      {/* Title + badges */}
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-white font-semibold text-sm">{ticket.title}</span>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[ticket.status]}`}>
@@ -249,8 +242,6 @@ export default function AdminTicketsPage() {
                           {ticket.priority}
                         </span>
                       </div>
-
-                      {/* Meta row */}
                       <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
                         <span className="text-slate-400 text-xs flex items-center gap-1">
                           <User size={10} /> {ticket.reporterName}
@@ -267,24 +258,16 @@ export default function AdminTicketsPage() {
                           </span>
                         )}
                       </div>
-
-                      {/* Assignee */}
                       {ticket.assigneeName && (
                         <p className="text-indigo-400 text-xs mt-1">
                           🔧 Assigned to: <strong>{ticket.assigneeName}</strong>
                         </p>
                       )}
-
-                      {/* Contact details preview */}
                       {ticket.contactDetails && (
-                        <p className="text-slate-500 text-xs mt-0.5">
-                          Contact: {ticket.contactDetails}
-                        </p>
+                        <p className="text-slate-500 text-xs mt-0.5">Contact: {ticket.contactDetails}</p>
                       )}
                     </div>
-
                     <div className="flex items-center gap-2 shrink-0">
-                      {/* Attachment & comment count badges */}
                       {ticket.attachments?.length > 0 && (
                         <span className="text-slate-400 text-xs flex items-center gap-0.5">
                           <Paperclip size={11} /> {ticket.attachments.length}
@@ -298,19 +281,17 @@ export default function AdminTicketsPage() {
                   </div>
                 </div>
 
-                {/* ── Expanded Admin Panel ── */}
+                {/* Expanded Admin Panel */}
                 {isExpanded && (
                   <div
-                    className="border-t border-slate-700 p-4 space-y-5 bg-slate-850"
+                    className="border-t border-slate-700 p-4 space-y-5"
                     onClick={e => e.stopPropagation()}
                   >
-                    {/* Full description */}
                     <div>
                       <p className="text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Description</p>
                       <p className="text-slate-200 text-sm leading-relaxed">{ticket.description}</p>
                     </div>
 
-                    {/* Resolution Note */}
                     {ticket.resolutionNote && (
                       <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
                         <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-1">Resolution Note</p>
@@ -318,7 +299,6 @@ export default function AdminTicketsPage() {
                       </div>
                     )}
 
-                    {/* Rejection Reason */}
                     {ticket.rejectionReason && (
                       <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
                         <p className="text-red-400 text-xs font-semibold uppercase tracking-wide mb-1">Rejection Reason</p>
@@ -326,7 +306,7 @@ export default function AdminTicketsPage() {
                       </div>
                     )}
 
-                    {/* ── Attachments ── */}
+                    {/* Attachments */}
                     {ticket.attachments?.length > 0 && (
                       <div>
                         <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
@@ -341,15 +321,14 @@ export default function AdminTicketsPage() {
                               rel="noreferrer"
                               className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-indigo-300 text-xs px-3 py-1.5 rounded-lg transition"
                             >
-                              <Paperclip size={11} />
-                              {a.fileName}
+                              <Paperclip size={11} /> {a.fileName}
                             </a>
                           ))}
                         </div>
                       </div>
                     )}
 
-                    {/* ── Assign Technician ── */}
+                    {/* Assign Technician */}
                     {ticket.status !== 'CLOSED' && ticket.status !== 'REJECTED' && (
                       <div>
                         <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
@@ -374,7 +353,7 @@ export default function AdminTicketsPage() {
                       </div>
                     )}
 
-                    {/* ── Update Status ── */}
+                    {/* Update Status */}
                     {allowedStatuses.length > 0 && (
                       <div>
                         <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">Update Status</p>
@@ -389,7 +368,6 @@ export default function AdminTicketsPage() {
                               <option key={s} value={s}>{s.replace('_', ' ')}</option>
                             ))}
                           </select>
-
                           {statusForm.status === 'REJECTED' && (
                             <input
                               className="w-full bg-slate-900 border border-red-500/50 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500"
@@ -398,7 +376,6 @@ export default function AdminTicketsPage() {
                               onChange={e => setStatusForm({ ...statusForm, rejectionReason: e.target.value })}
                             />
                           )}
-
                           {statusForm.status === 'RESOLVED' && (
                             <textarea
                               className="w-full bg-slate-900 border border-green-500/30 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500 resize-none"
@@ -408,7 +385,6 @@ export default function AdminTicketsPage() {
                               onChange={e => setStatusForm({ ...statusForm, resolutionNote: e.target.value })}
                             />
                           )}
-
                           {statusForm.status && (
                             <button
                               onClick={() => handleStatusUpdate(ticket.id)}
@@ -422,7 +398,6 @@ export default function AdminTicketsPage() {
                       </div>
                     )}
 
-                    {/* Terminal state notice */}
                     {allowedStatuses.length === 0 && (
                       <div className="bg-slate-700/40 rounded-xl p-3 text-center">
                         <p className="text-slate-400 text-xs">
@@ -431,12 +406,11 @@ export default function AdminTicketsPage() {
                       </div>
                     )}
 
-                    {/* ── Comments ── */}
+                    {/* Comments */}
                     <div>
                       <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
                         Comments ({ticket.comments?.length || 0})
                       </p>
-
                       <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                         {ticket.comments?.length === 0 && (
                           <p className="text-slate-600 text-xs text-center py-2">No comments yet.</p>
@@ -452,8 +426,6 @@ export default function AdminTicketsPage() {
                                   </p>
                                 )}
                               </div>
-
-                              {/* Admin can edit/delete own comments */}
                               {c.authorId === user.userId && (
                                 <div className="flex gap-2">
                                   <button
@@ -471,7 +443,6 @@ export default function AdminTicketsPage() {
                                 </div>
                               )}
                             </div>
-
                             {editingComment?.id === c.id ? (
                               <div className="flex gap-2 mt-1">
                                 <input
@@ -499,8 +470,6 @@ export default function AdminTicketsPage() {
                           </div>
                         ))}
                       </div>
-
-                      {/* Add comment */}
                       <div className="flex gap-2 mt-3">
                         <input
                           className="flex-1 bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500"
@@ -518,7 +487,6 @@ export default function AdminTicketsPage() {
                         </button>
                       </div>
                     </div>
-
                   </div>
                 )}
               </div>
@@ -526,6 +494,20 @@ export default function AdminTicketsPage() {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AdminTicketsPage — full standalone page, used by /admin/tickets route
+// ─────────────────────────────────────────────────────────────────────────────
+export default function AdminTicketsPage() {
+  return (
+    <div className="min-h-screen bg-slate-950">
+      <Navbar />
+      <div className="max-w-5xl mx-auto px-4 pt-24 pb-16">
+        <AdminTicketsContent />
+      </div>
     </div>
   )
 }

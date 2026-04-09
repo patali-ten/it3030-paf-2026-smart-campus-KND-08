@@ -4,13 +4,15 @@ import { useAuth } from '../../context/AuthContext'
 import { CalendarCheck, Wrench, Bell, ArrowRight, Building2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { getMyBookings } from '../../api/bookings'
-import MyTicketsPage from './MyTicketsPage'
+// ✅ Import the inner content component (no Navbar/page wrapper)
+import { MyTicketsContent } from './MyTicketsPage'
 
 const QUICK_ACTIONS = [
-  { label: 'Browse Facilities', desc: 'Rooms, labs & equipment catalogue', href: '/user/resources', icon: Building2, color: 'from-teal-600 to-cyan-800' },
-  { label: 'Book a Resource', desc: 'Reserve rooms, labs & equipment', href: '/user/bookings', icon: CalendarCheck, color: 'from-indigo-600 to-indigo-800' },
-  { label: 'Report an Issue', desc: 'Submit a maintenance ticket', href: '/user/tickets', icon: Wrench, color: 'from-amber-600 to-orange-800' },
-  { label: 'Notifications', desc: 'Check your latest updates', href: '/user/notifications', icon: Bell, color: 'from-purple-600 to-purple-800' },
+  { label: 'Browse Facilities',  desc: 'Rooms, labs & equipment catalogue', href: '/user/resources',      icon: Building2,    color: 'from-teal-600 to-cyan-800'   },
+  { label: 'Book a Resource',    desc: 'Reserve rooms, labs & equipment',   href: '/user/bookings',      icon: CalendarCheck, color: 'from-indigo-600 to-indigo-800' },
+  // ✅ Report an Issue now links to the full My Tickets page
+  { label: 'Report an Issue',    desc: 'Submit a maintenance ticket',       href: '/user/tickets',       icon: Wrench,       color: 'from-amber-600 to-orange-800' },
+  { label: 'Notifications',      desc: 'Check your latest updates',         href: '/user/notifications', icon: Bell,         color: 'from-purple-600 to-purple-800' },
 ]
 
 export default function UserDashboard() {
@@ -55,7 +57,7 @@ export default function UserDashboard() {
         {/* Dashboard sections */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-          {/* My Recent Bookings - Member 2 */}
+          {/* My Recent Bookings */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
             <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
               <CalendarCheck size={18} className="text-indigo-400" /> My Recent Bookings
@@ -78,9 +80,9 @@ export default function UserDashboard() {
                       </p>
                     </div>
                     <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${
-                      booking.status === 'APPROVED'  ? 'bg-emerald-500/10 text-emerald-400' :
-                      booking.status === 'PENDING'   ? 'bg-amber-500/10 text-amber-400' :
-                      booking.status === 'REJECTED'  ? 'bg-rose-500/10 text-rose-400' :
+                      booking.status === 'APPROVED' ? 'bg-emerald-500/10 text-emerald-400' :
+                      booking.status === 'PENDING'  ? 'bg-amber-500/10 text-amber-400'   :
+                      booking.status === 'REJECTED' ? 'bg-rose-500/10 text-rose-400'     :
                       'bg-slate-500/10 text-slate-400'
                     }`}>
                       {booking.status}
@@ -96,9 +98,9 @@ export default function UserDashboard() {
             )}
           </div>
 
-          {/* My Tickets - Member 3 */}
+          {/* My Tickets widget — uses content-only component, no double Navbar */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <MyTicketsPage />
+            <MyTicketsContent />
           </div>
 
         </div>
