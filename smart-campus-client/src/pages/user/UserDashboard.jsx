@@ -1,9 +1,10 @@
+import { useState, useEffect } from 'react'
 import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
 import { CalendarCheck, Wrench, Bell, ArrowRight, Building2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
 import { getMyBookings } from '../../api/bookings'
+import MyTicketsPage from './MyTicketsPage'
 
 const QUICK_ACTIONS = [
   { label: 'Browse Facilities', desc: 'Rooms, labs & equipment catalogue', href: '/user/resources', icon: Building2, color: 'from-teal-600 to-cyan-800' },
@@ -36,7 +37,7 @@ export default function UserDashboard() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-10">
           {QUICK_ACTIONS.map(({ label, desc, href, icon: Icon, color }) => (
             <Link
               key={href}
@@ -95,15 +96,9 @@ export default function UserDashboard() {
             )}
           </div>
 
-          {/* My Open Tickets - Member 3 will add this */}
+          {/* My Tickets - Member 3 */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-white font-semibold mb-4 flex items-center gap-2">
-              <Wrench size={18} className="text-amber-400" /> My Open Tickets
-            </h2>
-            <div className="text-center py-8 text-slate-600 text-sm">
-              Your tickets will appear here.<br />
-              <span className="text-slate-700">(Member 3 will add this)</span>
-            </div>
+            <MyTicketsPage />
           </div>
 
         </div>
