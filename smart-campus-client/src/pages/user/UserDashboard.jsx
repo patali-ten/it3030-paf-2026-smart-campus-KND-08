@@ -1,11 +1,12 @@
 import Navbar from '../../components/Navbar'
 import { useAuth } from '../../context/AuthContext'
-import { CalendarCheck, Wrench, Bell, ArrowRight } from 'lucide-react'
+import { CalendarCheck, Wrench, Bell, ArrowRight, Building2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { getMyBookings } from '../../api/bookings'
 
 const QUICK_ACTIONS = [
+  { label: 'Browse Facilities', desc: 'Rooms, labs & equipment catalogue', href: '/user/resources', icon: Building2, color: 'from-teal-600 to-cyan-800' },
   { label: 'Book a Resource', desc: 'Reserve rooms, labs & equipment', href: '/user/bookings', icon: CalendarCheck, color: 'from-indigo-600 to-indigo-800' },
   { label: 'Report an Issue', desc: 'Submit a maintenance ticket', href: '/user/tickets', icon: Wrench, color: 'from-amber-600 to-orange-800' },
   { label: 'Notifications', desc: 'Check your latest updates', href: '/user/notifications', icon: Bell, color: 'from-purple-600 to-purple-800' },

@@ -34,6 +34,7 @@ public class SecurityConfig {
                         // Public endpoints — no token needed
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/api/resources/**").permitAll()
                         // Admin-only
                         .requestMatchers("/api/v1/users/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/*/role").hasRole("ADMIN")
