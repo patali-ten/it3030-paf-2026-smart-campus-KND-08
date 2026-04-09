@@ -12,17 +12,24 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final NotificationPreferenceService preferenceService;
 
     @Override
     public NotificationResponseDTO createNotification(CreateNotificationDTO dto) {
         User user = userRepository.findById(dto.getRecipientUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getRecipientUserId()));
+
+        // Check if user has this notification type enabled — if not, silently skip
+        if (!preferenceService.isTypeEnabled(dto.getRecipientUserId(), dto.getType())) {
+            return null; // user has disabled this type — don't create
+        }
 
         Notification notification = Notification.builder()
                 .recipient(user)
@@ -30,7 +37,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .message(dto.getMessage())
                 .type(dto.getType())
                 .referenceId(dto.getReferenceId())
-                .isRead(false)
+                .read(false)
                 .build();
 
         return toDTO(notificationRepository.save(notification));
@@ -46,13 +53,13 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public List<NotificationResponseDTO> getUnreadNotifications(Long userId) {
         return notificationRepository
-                .findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId)
+                .findByRecipientIdAndReadFalseOrderByCreatedAtDesc(userId)
                 .stream().map(this::toDTO).collect(Collectors.toList());
     }
 
     @Override
     public long getUnreadCount(Long userId) {
-        return notificationRepository.countByRecipientIdAndIsReadFalse(userId);
+        return notificationRepository.countByRecipientIdAndReadFalse(userId);
     }
 
     @Override
@@ -71,7 +78,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public void markAllAsRead(Long userId) {
         List<Notification> unread = notificationRepository
-                .findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(userId);
+                .findByRecipientIdAndReadFalseOrderByCreatedAtDesc(userId);
         unread.forEach(n -> n.setRead(true));
         notificationRepository.saveAll(unread);
     }
@@ -96,7 +103,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .message(n.getMessage())
                 .type(n.getType())
                 .referenceId(n.getReferenceId())
-                .isRead(n.isRead())
+                .read(n.isRead())
                 .createdAt(n.getCreatedAt())
                 .build();
     }

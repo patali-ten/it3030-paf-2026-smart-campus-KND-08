@@ -11,9 +11,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     // All notifications for a user, newest first
     List<Notification> findByRecipientIdOrderByCreatedAtDesc(Long userId);
 
-    // Only unread notifications
-    List<Notification> findByRecipientIdAndIsReadFalseOrderByCreatedAtDesc(Long userId);
+    // FIX: Changed IsReadFalse to ReadFalse to match the 'read' field in the Entity
+    List<Notification> findByRecipientIdAndReadFalseOrderByCreatedAtDesc(Long userId);
 
-    // Count of unread (for the badge number)
-    long countByRecipientIdAndIsReadFalse(Long userId);
+    // FIX: Changed IsReadFalse to ReadFalse
+    long countByRecipientIdAndReadFalse(Long userId);
 }

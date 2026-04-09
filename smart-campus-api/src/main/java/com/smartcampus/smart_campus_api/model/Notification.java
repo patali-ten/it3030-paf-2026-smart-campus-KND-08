@@ -33,8 +33,9 @@ public class Notification {
     // Stores the bookingId or ticketId this notification is about
     private String referenceId;
 
+    @Column(name = "is_read")
     @Builder.Default
-    private boolean isRead = false;
+    private boolean read = false;   // renamed from isRead to read
 
     private LocalDateTime createdAt;
 

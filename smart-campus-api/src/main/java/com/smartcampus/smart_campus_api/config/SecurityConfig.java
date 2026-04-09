@@ -33,9 +33,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints — no token needed
                         .requestMatchers("/api/v1/auth/**").permitAll()
-                        .requestMatchers("/login/oauth2/*", "/oauth2/*").permitAll()
                         .requestMatchers("/api/v1/tickets/attachments/*/file").permitAll() // ✅ add line
 
+                        .requestMatchers("/login/oauth2/**", "/oauth2/**").permitAll()
+                        .requestMatchers("/api/resources/**").permitAll()
                         // Admin-only
                         .requestMatchers("/api/v1/users/all").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/v1/users/*/role").hasRole("ADMIN")

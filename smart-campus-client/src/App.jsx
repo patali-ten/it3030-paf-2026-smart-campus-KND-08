@@ -8,6 +8,10 @@ import Login from './pages/auth/Login'
 import Register from './pages/auth/Register'
 import OAuthCallback from './pages/auth/OAuthCallback'
 
+// Booking - Member 2
+import UserBookings from './pages/user/UserBookings'
+import AdminBookingManager from './pages/admin/AdminBookingManager'
+
 // Dashboards
 import UserDashboard from './pages/user/UserDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -16,6 +20,13 @@ import TechnicianDashboard from './pages/technician/TechnicianDashboard'
 // Shared Pages
 import ProfilePage from './components/ProfilePage'
 import NotificationsPage from './components/NotificationsPage'
+
+// Chatbot - Member 2 Innovation
+import ChatBot from './components/ChatBot'
+
+// Resources - Member 1
+import ResourceCatalogue from './pages/user/ResourceCatalogue'
+import AdminResources from './pages/admin/AdminResources'
 
 export default function App() {
   return (
@@ -59,6 +70,13 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          {/* USER booking route - Member 2 */}
+          <Route path="/user/bookings" element={
+            <ProtectedRoute allowedRoles={['USER']}>
+              <UserBookings />
+            </ProtectedRoute>
+          } />
+
           {/* ADMIN routes */}
           <Route path="/admin/dashboard" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -76,6 +94,27 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          {/* ADMIN booking route - Member 2 */}
+          <Route path="/admin/bookings" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminBookingManager />
+            </ProtectedRoute>
+          } />
+          
+          {/* USER resource route - Member 1 */}
+          <Route path="/user/resources" element={
+            <ProtectedRoute allowedRoles={['USER']}>
+              <ResourceCatalogue />
+            </ProtectedRoute>
+          } />
+
+          {/* ADMIN resource route - Member 1 */}
+          <Route path="/admin/resources" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminResources />
+            </ProtectedRoute>
+          } />
+          
           {/* TECHNICIAN routes */}
           <Route path="/technician/dashboard" element={
             <ProtectedRoute allowedRoles={['TECHNICIAN']}>
@@ -92,7 +131,12 @@ export default function App() {
               <ProfilePage />
             </ProtectedRoute>
           } />
+
         </Routes>
+
+        {/* ChatBot - visible on ALL pages including login/register - Member 2 Innovation */}
+        <ChatBot />
+
       </BrowserRouter>
     </AuthProvider>
   )
