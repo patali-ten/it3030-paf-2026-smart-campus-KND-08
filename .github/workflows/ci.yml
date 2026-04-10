@@ -36,11 +36,11 @@ jobs:
 
       - name: Build with Maven
         run: mvn clean install -DskipTests
-        working-directory: .
+        working-directory: ./smart-campus-api
 
       - name: Run Tests
         run: mvn test
-        working-directory: .
+        working-directory: ./smart-campus-api
         env:
           SPRING_DATASOURCE_URL: jdbc:mysql://localhost:3306/smart_campus_db
           SPRING_DATASOURCE_USERNAME: root
