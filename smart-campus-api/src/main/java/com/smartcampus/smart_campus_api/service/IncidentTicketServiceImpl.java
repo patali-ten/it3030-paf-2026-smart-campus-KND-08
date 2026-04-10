@@ -107,7 +107,7 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
         IncidentTicket updated = ticketRepository.save(ticket);
 
         if (!oldStatus.equals(dto.getStatus())) {
-            // Notify the Reporter
+            // 1. Notify the Reporter
             notificationService.createNotification(CreateNotificationDTO.builder()
                     .recipientUserId(ticket.getReporter().getId())
                     .title("Ticket Status Updated")
@@ -116,12 +116,23 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                     .referenceId(String.valueOf(ticketId))
                     .build());
 
-            // Notify ONLY the Admin who assigned this ticket
+            // 2. Notify the Admin who assigned this ticket
             if (ticket.getAssignedBy() != null) {
                 notificationService.createNotification(CreateNotificationDTO.builder()
                         .recipientUserId(ticket.getAssignedBy().getId())
                         .title("Assigned Ticket Updated")
-                        .message("Technician updated Ticket #" + ticketId + " (\"" + ticket.getTitle() + "\") to " + dto.getStatus())
+                        .message("The status for Ticket #" + ticketId + " has been updated to " + dto.getStatus())
+                        .type(NotificationType.TICKET_STATUS_CHANGED)
+                        .referenceId(String.valueOf(ticketId))
+                        .build());
+            }
+
+            // 3. Notify the Assigned Technician (if one exists)
+            if (ticket.getAssignee() != null) {
+                notificationService.createNotification(CreateNotificationDTO.builder()
+                        .recipientUserId(ticket.getAssignee().getId())
+                        .title("Ticket Status Update")
+                        .message("The status of your assigned ticket \"" + ticket.getTitle() + "\" has changed to " + dto.getStatus())
                         .type(NotificationType.TICKET_STATUS_CHANGED)
                         .referenceId(String.valueOf(ticketId))
                         .build());
@@ -134,17 +145,16 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
     public TicketResponseDTO assignTicket(Long ticketId, AssignTicketDTO dto) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         User assignee = findUserOrThrow(dto.getAssigneeId());
-        User admin = findUserOrThrow(dto.getAdminUserId()); // Using adminUserId from DTO
+        User admin = findUserOrThrow(dto.getAdminUserId());
         
         ticket.setAssignee(assignee);
-        ticket.setAssignedBy(admin); // Set the specific admin
+        ticket.setAssignedBy(admin);
         
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
         }
         IncidentTicket updated = ticketRepository.save(ticket);
 
-        // Notify Reporter
         notificationService.createNotification(CreateNotificationDTO.builder()
                 .recipientUserId(ticket.getReporter().getId())
                 .title("Technician Assigned")
@@ -153,7 +163,6 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .referenceId(String.valueOf(ticketId))
                 .build());
 
-        // Notify Technician
         notificationService.createNotification(CreateNotificationDTO.builder()
                 .recipientUserId(assignee.getId())
                 .title("New Ticket Assigned")
