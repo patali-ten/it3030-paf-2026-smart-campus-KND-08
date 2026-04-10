@@ -23,6 +23,9 @@ public interface IncidentTicketService {
     TicketResponseDTO updateTicketStatus(Long ticketId, UpdateTicketStatusDTO dto);
     TicketResponseDTO assignTicket(Long ticketId, AssignTicketDTO dto);
 
+
+    void deleteTicket(Long ticketId, Long requestingUserId);
+
     // Attachments
     TicketAttachmentResponseDTO addAttachment(Long ticketId, MultipartFile file);
     void deleteAttachment(Long attachmentId, Long requestingUserId);
