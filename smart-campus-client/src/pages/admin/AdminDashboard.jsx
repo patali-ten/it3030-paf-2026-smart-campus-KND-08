@@ -6,29 +6,33 @@ import { getAllUsers } from '../../api/users'
 import { AdminTicketsContent } from './AdminTicketsPage'
 import { getAllBookings } from '../../api/bookings'
 import { getAllResources } from '../../api/resources'
+import { getAllTickets } from '../../api/tickets'
 import { Users, Building2, CalendarCheck, Wrench } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function AdminDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
-  const [userCount, setUserCount] = useState(0)
+  const [userCount, setUserCount]           = useState(0)
   const [pendingBookings, setPendingBookings] = useState([])
-  const [bookingCount, setBookingCount] = useState(0)
-  const [resourceCount, setResourceCount] = useState(0)
+  const [bookingCount, setBookingCount]     = useState(0)
+  const [resourceCount, setResourceCount]   = useState(0)
+  const [openTicketCount, setOpenTicketCount] = useState(0)
 
   const fetchData = async () => {
     try {
-      const [uRes, bPending, bAll, rRes] = await Promise.all([
+      const [uRes, bPending, bAll, rRes, tRes] = await Promise.all([
         getAllUsers(),
         getAllBookings('PENDING'),
         getAllBookings(),
-        getAllResources()
+        getAllResources(),
+        getAllTickets()
       ])
       setUserCount(uRes.data.length)
       setPendingBookings(bPending.data.slice(0, 5))
       setBookingCount(bAll.data.length)
       setResourceCount(rRes.data.length)
+      setOpenTicketCount(tRes.data.filter(t => t.status === 'OPEN').length)
     } catch {
       toast.error('Error fetching dashboard data')
     }
@@ -37,10 +41,10 @@ export default function AdminDashboard() {
   useEffect(() => { fetchData() }, [])
 
   const STAT_CARDS = [
-    { label: 'Total Users',  icon: Users,        value: userCount,     path: '/admin/users',     accent: '#c9a84c' },
-    { label: 'Resources',    icon: Building2,    value: resourceCount, path: '/admin/resources',  accent: '#10b981' },
-    { label: 'Bookings',     icon: CalendarCheck, value: bookingCount, path: '/admin/bookings',   accent: '#3b82f6' },
-    { label: 'Open Tickets', icon: Wrench,       value: '—',          path: '/admin/tickets',    accent: '#ef4444' },
+    { label: 'Total Users',  icon: Users,         value: userCount,       path: '/admin/users',     accent: '#c9a84c' },
+    { label: 'Resources',    icon: Building2,     value: resourceCount,   path: '/admin/resources', accent: '#10b981' },
+    { label: 'Bookings',     icon: CalendarCheck, value: bookingCount,    path: '/admin/bookings',  accent: '#3b82f6' },
+    { label: 'Open Tickets', icon: Wrench,        value: openTicketCount, path: '/admin/tickets',   accent: '#ef4444' },
   ]
 
   return (
@@ -48,7 +52,7 @@ export default function AdminDashboard() {
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 pt-24 pb-16">
 
-        {/* Header - Premium Navy & Gold */}
+        {/* Header */}
         <div className="rounded-2xl p-8 mb-8 relative overflow-hidden bg-[#1e3a5f] shadow-xl border-b-4 border-[#c9a84c]">
           <div className="absolute right-0 top-0 w-64 h-full opacity-10"
             style={{ background: 'radial-gradient(circle at 80% 50%, #c9a84c 0%, transparent 70%)' }} />
@@ -95,7 +99,9 @@ export default function AdminDashboard() {
                   </div>
                 ))}
                 <div className="pt-2">
-                  <Link to="/admin/bookings" className="text-sm font-bold text-[#c9a84c] hover:text-[#b08d3a] transition-colors">Review all bookings →</Link>
+                  <Link to="/admin/bookings" className="text-sm font-bold text-[#c9a84c] hover:text-[#b08d3a] transition-colors">
+                    Review all bookings →
+                  </Link>
                 </div>
               </div>
             )}
@@ -105,6 +111,7 @@ export default function AdminDashboard() {
             <AdminTicketsContent />
           </div>
         </div>
+
       </div>
     </div>
   )
