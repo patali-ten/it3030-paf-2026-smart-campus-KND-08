@@ -8,8 +8,10 @@ import {
   addComment,
   editComment,
   deleteComment,
+  deleteTicket,
+  getUserById,
 } from '../../api/tickets'
-import { Wrench, ChevronDown, Send, Paperclip, X, User, MapPin, Tag, Clock } from 'lucide-react'
+import { Wrench, ChevronDown, Send, Paperclip, X, User, MapPin, Tag, Clock, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const STATUS_COLORS = {
@@ -35,26 +37,22 @@ const STATUS_FLOW = {
   REJECTED:    [],
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AdminTicketsContent — logic + UI only, no Navbar, no page shell
-// Used as a widget inside AdminDashboard AND inside the full page below
-// ─────────────────────────────────────────────────────────────────────────────
 export function AdminTicketsContent() {
   const { user } = useAuth()
 
-  const [tickets, setTickets]               = useState([])
-  const [loading, setLoading]               = useState(true)
-  const [selectedTicket, setSelectedTicket] = useState(null)
-  const [statusForm, setStatusForm]         = useState({ status: '', rejectionReason: '', resolutionNote: '' })
-  const [updating, setUpdating]             = useState(false)
-  const [assigneeId, setAssigneeId]         = useState('')
-  const [comment, setComment]               = useState('')
-  const [editingComment, setEditingComment] = useState(null)
-  const [filterStatus, setFilterStatus]     = useState('ALL')
-  const [filterPriority, setFilterPriority] = useState('ALL')
-  const [search, setSearch]                 = useState('')
+  const [tickets, setTickets]                 = useState([])
+  const [loading, setLoading]                 = useState(true)
+  const [selectedTicket, setSelectedTicket]   = useState(null)
+  const [statusForm, setStatusForm]           = useState({ status: '', rejectionReason: '', resolutionNote: '' })
+  const [updating, setUpdating]               = useState(false)
+  const [assigneeId, setAssigneeId]           = useState('')
+  const [comment, setComment]                 = useState('')
+  const [editingComment, setEditingComment]   = useState(null)
+  const [filterStatus, setFilterStatus]       = useState('ALL')
+  const [filterPriority, setFilterPriority]   = useState('ALL')
+  const [search, setSearch]                   = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
   const fetchTickets = async () => {
     try {
       setLoading(true)
@@ -76,7 +74,6 @@ export function AdminTicketsContent() {
     }
   }, [tickets])
 
-  // ── Handlers ───────────────────────────────────────────────────────────────
   const handleStatusUpdate = async (ticketId) => {
     if (!statusForm.status) return toast.error('Select a status')
     if (statusForm.status === 'REJECTED' && !statusForm.rejectionReason.trim())
@@ -100,22 +97,31 @@ export function AdminTicketsContent() {
   }
 
   const handleAssign = async (ticketId) => {
-    if (!assigneeId.trim()) return toast.error('Enter a technician user ID')
-    try {
-      setUpdating(true)
-      await assignTicket(ticketId, {
-        assigneeId: parseInt(assigneeId),
-        adminUserId: user.userId,
-      })
-      toast.success('Technician assigned!')
-      setAssigneeId('')
-      fetchTickets()
-    } catch {
-      toast.error('Failed to assign technician')
-    } finally {
-      setUpdating(false)
+  if (!assigneeId.trim()) return toast.error('Enter a technician user ID')
+  try {
+    setUpdating(true)
+
+    // Validate user is a TECHNICIAN
+    const userRes = await getUserById(parseInt(assigneeId))
+    const targetUser = userRes.data
+    if (!targetUser.roles || !targetUser.roles.includes('TECHNICIAN')) {
+      toast.error('This user is not a technician!')
+      return
     }
+
+    await assignTicket(ticketId, {
+      assigneeId: parseInt(assigneeId),
+      adminUserId: user.userId,
+    })
+    toast.success('Technician assigned!')
+    setAssigneeId('')
+    fetchTickets()
+  } catch {
+    toast.error('User not found or not a technician')
+  } finally {
+    setUpdating(false)
   }
+}
 
   const handleComment = async (ticketId) => {
     if (!comment.trim()) return
@@ -151,7 +157,18 @@ export function AdminTicketsContent() {
     }
   }
 
-  // ── Filter ─────────────────────────────────────────────────────────────────
+  const handleDeleteTicket = async (ticketId) => {
+    try {
+      await deleteTicket(ticketId, user.userId)
+      toast.success('Ticket deleted!')
+      setConfirmDeleteId(null)
+      setSelectedTicket(null)
+      fetchTickets()
+    } catch {
+      toast.error('Failed to delete ticket')
+    }
+  }
+
   const filtered = tickets.filter(t => {
     const matchStatus   = filterStatus   === 'ALL' || t.status   === filterStatus
     const matchPriority = filterPriority === 'ALL' || t.priority === filterPriority
@@ -160,11 +177,9 @@ export function AdminTicketsContent() {
     return matchStatus && matchPriority && matchSearch
   })
 
-  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-5">
 
-      {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h2 className="text-white font-semibold flex items-center gap-2 text-lg">
           <Wrench size={20} className="text-rose-400" /> All Tickets
@@ -174,7 +189,6 @@ export function AdminTicketsContent() {
         </h2>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-wrap gap-2">
         <input
           className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm flex-1 min-w-[160px]"
@@ -204,7 +218,6 @@ export function AdminTicketsContent() {
         </select>
       </div>
 
-      {/* Tickets List */}
       {loading ? (
         <div className="text-center py-12 text-slate-500 text-sm">Loading tickets...</div>
       ) : filtered.length === 0 ? (
@@ -212,7 +225,7 @@ export function AdminTicketsContent() {
       ) : (
         <div className="space-y-3">
           {filtered.map(ticket => {
-            const isExpanded     = selectedTicket?.id === ticket.id
+            const isExpanded      = selectedTicket?.id === ticket.id
             const allowedStatuses = STATUS_FLOW[ticket.status] || []
 
             return (
@@ -220,7 +233,6 @@ export function AdminTicketsContent() {
                 key={ticket.id}
                 className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden hover:border-slate-500 transition"
               >
-                {/* Summary Row */}
                 <div
                   className="p-4 cursor-pointer"
                   onClick={() => {
@@ -260,7 +272,7 @@ export function AdminTicketsContent() {
                       </div>
                       {ticket.assigneeName && (
                         <p className="text-indigo-400 text-xs mt-1">
-                          🔧 Assigned to: <strong>{ticket.assigneeName}</strong>
+                          Assigned to: <strong>{ticket.assigneeName}</strong>
                         </p>
                       )}
                       {ticket.contactDetails && (
@@ -273,6 +285,16 @@ export function AdminTicketsContent() {
                           <Paperclip size={11} /> {ticket.attachments.length}
                         </span>
                       )}
+                      <button
+                        onClick={e => {
+                          e.stopPropagation()
+                          setConfirmDeleteId(ticket.id)
+                        }}
+                        className="text-red-400 hover:text-red-300 transition p-1 rounded-lg hover:bg-red-500/10"
+                        title="Delete ticket"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                       <ChevronDown
                         size={16}
                         className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -281,7 +303,6 @@ export function AdminTicketsContent() {
                   </div>
                 </div>
 
-                {/* Expanded Admin Panel */}
                 {isExpanded && (
                   <div
                     className="border-t border-slate-700 p-4 space-y-5"
@@ -306,7 +327,6 @@ export function AdminTicketsContent() {
                       </div>
                     )}
 
-                    {/* Attachments */}
                     {ticket.attachments?.length > 0 && (
                       <div>
                         <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
@@ -328,7 +348,6 @@ export function AdminTicketsContent() {
                       </div>
                     )}
 
-                    {/* Assign Technician */}
                     {ticket.status !== 'CLOSED' && ticket.status !== 'REJECTED' && (
                       <div>
                         <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
@@ -353,7 +372,6 @@ export function AdminTicketsContent() {
                       </div>
                     )}
 
-                    {/* Update Status */}
                     {allowedStatuses.length > 0 && (
                       <div>
                         <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">Update Status</p>
@@ -406,7 +424,6 @@ export function AdminTicketsContent() {
                       </div>
                     )}
 
-                    {/* Comments */}
                     <div>
                       <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
                         Comments ({ticket.comments?.length || 0})
@@ -494,13 +511,36 @@ export function AdminTicketsContent() {
           })}
         </div>
       )}
+
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full mx-4 space-y-4">
+            <h3 className="text-white font-semibold text-lg">Delete Ticket?</h3>
+            <p className="text-slate-400 text-sm">
+              This action cannot be undone. The ticket and all its attachments and comments will be permanently deleted.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-xl text-sm transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleDeleteTicket(confirmDeleteId)}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-sm transition font-medium"
+              >
+                Yes, Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AdminTicketsPage — full standalone page, used by /admin/tickets route
-// ─────────────────────────────────────────────────────────────────────────────
 export default function AdminTicketsPage() {
   return (
     <div className="min-h-screen bg-slate-950">
@@ -511,3 +551,4 @@ export default function AdminTicketsPage() {
     </div>
   )
 }
+

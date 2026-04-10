@@ -10,7 +10,6 @@ export const updateTicketStatus = (id, data) => api.patch(`/tickets/${id}/status
 export const assignTicket = (id, data) => api.put(`/tickets/${id}/assign`, data)
 export const deleteTicket = (id, userId) => api.delete(`/tickets/${id}?userId=${userId}`)
 
-
 // ATTACHMENTS
 export const addAttachment = (ticketId, file) => {
   const formData = new FormData()
@@ -31,3 +30,6 @@ export const editComment = (commentId, data) =>
   api.put(`/tickets/comments/${commentId}`, data)
 export const deleteComment = (commentId, userId) =>
   api.delete(`/tickets/comments/${commentId}?userId=${userId}`)
+
+
+export const getUserById = (id) => api.get(`/users/${id}`)
