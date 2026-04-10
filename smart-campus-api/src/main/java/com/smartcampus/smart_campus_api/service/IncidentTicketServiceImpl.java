@@ -105,7 +105,9 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
         if (dto.getResolutionNote() != null) ticket.setResolutionNote(dto.getResolutionNote());
         if (dto.getRejectionReason() != null) ticket.setRejectionReason(dto.getRejectionReason());
         IncidentTicket updated = ticketRepository.save(ticket);
+
         if (!oldStatus.equals(dto.getStatus())) {
+            // Notify the Reporter
             notificationService.createNotification(CreateNotificationDTO.builder()
                     .recipientUserId(ticket.getReporter().getId())
                     .title("Ticket Status Updated")
@@ -113,6 +115,17 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                     .type(NotificationType.TICKET_STATUS_CHANGED)
                     .referenceId(String.valueOf(ticketId))
                     .build());
+
+            // Notify ONLY the Admin who assigned this ticket
+            if (ticket.getAssignedBy() != null) {
+                notificationService.createNotification(CreateNotificationDTO.builder()
+                        .recipientUserId(ticket.getAssignedBy().getId())
+                        .title("Assigned Ticket Updated")
+                        .message("Technician updated Ticket #" + ticketId + " (\"" + ticket.getTitle() + "\") to " + dto.getStatus())
+                        .type(NotificationType.TICKET_STATUS_CHANGED)
+                        .referenceId(String.valueOf(ticketId))
+                        .build());
+            }
         }
         return mapToResponseDTO(updated);
     }
@@ -121,11 +134,17 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
     public TicketResponseDTO assignTicket(Long ticketId, AssignTicketDTO dto) {
         IncidentTicket ticket = findTicketOrThrow(ticketId);
         User assignee = findUserOrThrow(dto.getAssigneeId());
+        User admin = findUserOrThrow(dto.getAdminUserId()); // Using adminUserId from DTO
+        
         ticket.setAssignee(assignee);
+        ticket.setAssignedBy(admin); // Set the specific admin
+        
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
         }
         IncidentTicket updated = ticketRepository.save(ticket);
+
+        // Notify Reporter
         notificationService.createNotification(CreateNotificationDTO.builder()
                 .recipientUserId(ticket.getReporter().getId())
                 .title("Technician Assigned")
@@ -133,35 +152,45 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .type(NotificationType.TICKET_STATUS_CHANGED)
                 .referenceId(String.valueOf(ticketId))
                 .build());
+
+        // Notify Technician
+        notificationService.createNotification(CreateNotificationDTO.builder()
+                .recipientUserId(assignee.getId())
+                .title("New Ticket Assigned")
+                .message("You have been assigned to a new ticket: \"" + ticket.getTitle() + "\"")
+                .type(NotificationType.TICKET_STATUS_CHANGED)
+                .referenceId(String.valueOf(ticketId))
+                .build());
+
         return mapToResponseDTO(updated);
     }
 
     @Override
-public void deleteTicket(Long ticketId, Long requestingUserId) {
-    IncidentTicket ticket = findTicketOrThrow(ticketId);
-    User requestingUser = findUserOrThrow(requestingUserId);
+    public void deleteTicket(Long ticketId, Long requestingUserId) {
+        IncidentTicket ticket = findTicketOrThrow(ticketId);
+        User requestingUser = findUserOrThrow(requestingUserId);
 
-    boolean isAdmin = requestingUser.getRoles().contains(Role.ADMIN);
-    boolean isReporter = ticket.getReporter().getId().equals(requestingUserId);
+        boolean isAdmin = requestingUser.getRoles().contains(Role.ADMIN);
+        boolean isReporter = ticket.getReporter().getId().equals(requestingUserId);
 
-    if (!isAdmin && !isReporter) {
-        throw new RuntimeException("Not authorized to delete this ticket");
-    }
-
-    if (isReporter && !isAdmin && ticket.getStatus() != TicketStatus.OPEN) {
-        throw new RuntimeException("Only OPEN tickets can be deleted");
-    }
-
-    for (TicketAttachment attachment : ticket.getAttachments()) {
-        try {
-            Files.deleteIfExists(Paths.get(attachment.getFilePath()));
-        } catch (IOException e) {
-            // log but continue
+        if (!isAdmin && !isReporter) {
+            throw new RuntimeException("Not authorized to delete this ticket");
         }
-    }
 
-    ticketRepository.delete(ticket);
-}
+        if (isReporter && !isAdmin && ticket.getStatus() != TicketStatus.OPEN) {
+            throw new RuntimeException("Only OPEN tickets can be deleted");
+        }
+
+        for (TicketAttachment attachment : ticket.getAttachments()) {
+            try {
+                Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+            } catch (IOException e) {
+                // log but continue
+            }
+        }
+
+        ticketRepository.delete(ticket);
+    }
  
     @Override
     public TicketAttachmentResponseDTO addAttachment(Long ticketId, MultipartFile file) {
@@ -278,8 +307,6 @@ public void deleteTicket(Long ticketId, Long requestingUserId) {
                 .stream().map(this::mapToCommentDTO).collect(Collectors.toList());
     }
  
-    // ── Private helpers ───────────────────────────────────────────
-
     private IncidentTicket findTicketOrThrow(Long id) {
         return ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + id));

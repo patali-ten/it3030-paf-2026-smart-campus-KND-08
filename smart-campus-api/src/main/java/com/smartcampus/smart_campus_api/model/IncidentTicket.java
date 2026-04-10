@@ -26,6 +26,11 @@ public class IncidentTicket {
     @JoinColumn(name = "assignee_id")
     private User assignee;
 
+    // New field to track the admin who assigned the ticket
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_by_id")
+    private User assignedBy;
+
     @Column(nullable = false)
     private String title;
 
