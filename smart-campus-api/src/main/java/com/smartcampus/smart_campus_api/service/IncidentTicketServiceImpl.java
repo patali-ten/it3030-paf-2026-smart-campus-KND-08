@@ -135,6 +135,29 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .build());
         return mapToResponseDTO(updated);
     }
+
+    @Override
+    public void deleteTicket(Long ticketId, Long requestingUserId) {
+        IncidentTicket ticket = findTicketOrThrow(ticketId);
+
+        if (!ticket.getReporter().getId().equals(requestingUserId)) {
+            throw new RuntimeException("Not authorized to delete this ticket");
+        }
+        if (ticket.getStatus() != TicketStatus.OPEN) {
+            throw new RuntimeException("Only OPEN tickets can be deleted");
+        }
+
+        // Delete attachment files from disk
+        for (TicketAttachment attachment : ticket.getAttachments()) {
+            try {
+                Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+            } catch (IOException e) {
+                // log but continue
+            }
+        }
+
+        ticketRepository.delete(ticket);
+    }
  
     @Override
     public TicketAttachmentResponseDTO addAttachment(Long ticketId, MultipartFile file) {
@@ -251,6 +274,8 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
                 .stream().map(this::mapToCommentDTO).collect(Collectors.toList());
     }
  
+    // ── Private helpers ───────────────────────────────────────────
+
     private IncidentTicket findTicketOrThrow(Long id) {
         return ticketRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + id));
@@ -293,7 +318,7 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
         return TicketAttachmentResponseDTO.builder()
                 .id(a.getId())
                 .fileName(a.getFileName())
-                .fileUrl("http://localhost:8080/api/v1/tickets/attachments/" + a.getId() + "/file") // ✅ FIXED
+                .fileUrl("http://localhost:8080/api/v1/tickets/attachments/" + a.getId() + "/file")
                 .contentType(a.getContentType())
                 .uploadedAt(a.getUploadedAt())
                 .build();

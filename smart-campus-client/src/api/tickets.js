@@ -8,6 +8,8 @@ export const getMyTickets = (userId) => api.get(`/tickets/my?userId=${userId}`)
 export const getAssignedTickets = (userId) => api.get(`/tickets/assigned?userId=${userId}`)
 export const updateTicketStatus = (id, data) => api.patch(`/tickets/${id}/status`, data)
 export const assignTicket = (id, data) => api.put(`/tickets/${id}/assign`, data)
+export const deleteTicket = (id, userId) => api.delete(`/tickets/${id}?userId=${userId}`)
+
 
 // ATTACHMENTS
 export const addAttachment = (ticketId, file) => {
