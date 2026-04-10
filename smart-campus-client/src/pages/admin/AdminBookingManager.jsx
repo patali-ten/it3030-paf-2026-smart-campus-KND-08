@@ -15,26 +15,40 @@ const FILTERS = ['PENDING', 'APPROVED', 'REJECTED', 'CANCELLED', 'ALL']
 
 export default function AdminBookingManager() {
   const [bookings, setBookings] = useState([])
+  const [allBookings, setAllBookings] = useState([])   // ← full list for counts
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('PENDING')
   const [reviewingId, setReviewingId] = useState(null)
   const [remarks, setRemarks] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
+  // Fetch all bookings once for badge counts, and filtered list separately
+  useEffect(() => { fetchAllForCounts() }, [])
   useEffect(() => { fetchBookings() }, [filter])
+
+  const fetchAllForCounts = async () => {
+    try {
+      const res = await getAllBookings(undefined)
+      setAllBookings(res.data)
+    } catch {}
+  }
 
   const fetchBookings = async () => {
     setLoading(true)
     try {
       const res = await getAllBookings(filter === 'ALL' ? undefined : filter)
-      const sorted = res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-      setBookings(sorted)
+      setBookings(res.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
     } catch {
       toast.error('Failed to load bookings')
     } finally {
       setLoading(false)
     }
   }
+
+  const countFor = (status) =>
+    status === 'ALL'
+      ? allBookings.length
+      : allBookings.filter(b => b.status === status).length
 
   const handleReview = async (bookingId, approved) => {
     setSubmitting(true)
@@ -47,6 +61,7 @@ export default function AdminBookingManager() {
       setReviewingId(null)
       setRemarks('')
       fetchBookings()
+      fetchAllForCounts()   // ← refresh counts after review
     } catch (err) {
       toast.error(err.response?.data?.error || 'Action failed')
     } finally {
@@ -60,6 +75,7 @@ export default function AdminBookingManager() {
       await adminDeleteBooking(id)
       toast.success('Booking deleted')
       fetchBookings()
+      fetchAllForCounts()   // ← refresh counts after delete
     } catch {
       toast.error('Failed to delete booking')
     }
@@ -75,17 +91,36 @@ export default function AdminBookingManager() {
           <p className="text-slate-500 mt-1">Review and manage campus resource requests</p>
         </div>
 
+        {/* Filter Buttons with counts */}
         <div className="flex gap-2 mb-8 flex-wrap">
-          {FILTERS.map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all border ${
-                filter === f
-                  ? 'bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-md'
-                  : 'bg-white text-slate-500 border-slate-200 hover:border-[#c9a84c] hover:text-[#c9a84c]'
-              }`}>
-              {f}
-            </button>
-          ))}
+          {FILTERS.map(f => {
+            const count = countFor(f)
+            const isActive = filter === f
+            return (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all border ${
+                  isActive
+                    ? 'bg-[#1e3a5f] text-white border-[#1e3a5f] shadow-md'
+                    : 'bg-white text-slate-500 border-slate-200 hover:border-[#c9a84c] hover:text-[#c9a84c]'
+                }`}
+              >
+                {f}
+                {count > 0 && (
+                  <span
+                    className="inline-flex items-center justify-center rounded-full text-[10px] font-bold min-w-[18px] h-[18px] px-1"
+                    style={{
+                      background: isActive ? 'rgba(201,168,76,0.25)' : '#f1f5f9',
+                      color: isActive ? '#C9A84C' : '#64748b',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            )
+          })}
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
@@ -99,7 +134,7 @@ export default function AdminBookingManager() {
 
           {loading ? (
             <div className="flex justify-center py-20">
-              <div className="w-8 h-8 border-3 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
+              <div className="w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full animate-spin" />
             </div>
           ) : bookings.length === 0 ? (
             <div className="text-center py-20 text-slate-400 italic">No bookings found for this filter.</div>
@@ -133,19 +168,28 @@ export default function AdminBookingManager() {
                           <span className="flex items-center gap-2"><Users size={14} className="text-[#1e3a5f]" /> {booking.expectedAttendees} Persons</span>
                         )}
                       </div>
-                      
-                      {booking.purpose && <p className="text-slate-600 text-sm mt-3 font-medium">Purpose: <span className="font-normal">{booking.purpose}</span></p>}
+
+                      {booking.purpose && (
+                        <p className="text-slate-600 text-sm mt-3 font-medium">
+                          Purpose: <span className="font-normal">{booking.purpose}</span>
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
                       {booking.status === 'PENDING' && reviewingId !== booking.id && (
-                        <button onClick={() => { setReviewingId(booking.id); setRemarks('') }}
-                          className="text-xs px-5 py-2 bg-[#c9a84c] hover:bg-[#b08d3a] text-white rounded-lg font-bold transition-all shadow-sm">
+                        <button
+                          onClick={() => { setReviewingId(booking.id); setRemarks('') }}
+                          className="text-xs px-5 py-2 bg-[#c9a84c] hover:bg-[#b08d3a] text-white rounded-lg font-bold transition-all shadow-sm"
+                        >
                           REVIEW
                         </button>
                       )}
-                      <button onClick={() => handleAdminDelete(booking.id, booking.resourceName)}
-                        className="p-2 text-slate-300 hover:text-red-500 transition-colors" title="Delete record">
+                      <button
+                        onClick={() => handleAdminDelete(booking.id, booking.resourceName)}
+                        className="p-2 text-slate-300 hover:text-red-500 transition-colors"
+                        title="Delete record"
+                      >
                         <Trash2 size={16} />
                       </button>
                     </div>
@@ -154,20 +198,32 @@ export default function AdminBookingManager() {
                   {reviewingId === booking.id && (
                     <div className="mt-6 p-5 bg-white rounded-2xl border-2 border-[#c9a84c]/20 shadow-inner">
                       <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Decision Remarks</label>
-                      <input type="text" placeholder="Explain the reason for approval/rejection..."
-                        value={remarks} onChange={e => setRemarks(e.target.value)}
-                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#c9a84c]/20 outline-none mb-4" />
+                      <input
+                        type="text"
+                        placeholder="Explain the reason for approval/rejection..."
+                        value={remarks}
+                        onChange={e => setRemarks(e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#c9a84c]/20 outline-none mb-4"
+                      />
                       <div className="flex gap-3">
-                        <button onClick={() => handleReview(booking.id, true)} disabled={submitting}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md transition-all">
+                        <button
+                          onClick={() => handleReview(booking.id, true)}
+                          disabled={submitting}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-md transition-all"
+                        >
                           <CheckCircle size={16} /> APPROVE
                         </button>
-                        <button onClick={() => handleReview(booking.id, false)} disabled={submitting}
-                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-md transition-all">
+                        <button
+                          onClick={() => handleReview(booking.id, false)}
+                          disabled={submitting}
+                          className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-sm font-bold shadow-md transition-all"
+                        >
                           <XCircle size={16} /> REJECT
                         </button>
-                        <button onClick={() => setReviewingId(null)}
-                          className="px-6 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all">
+                        <button
+                          onClick={() => setReviewingId(null)}
+                          className="px-6 py-2.5 bg-slate-100 text-slate-500 rounded-xl text-sm font-bold hover:bg-slate-200 transition-all"
+                        >
                           CANCEL
                         </button>
                       </div>
