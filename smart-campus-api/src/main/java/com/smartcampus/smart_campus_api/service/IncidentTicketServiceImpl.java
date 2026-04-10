@@ -137,27 +137,31 @@ public class IncidentTicketServiceImpl implements IncidentTicketService {
     }
 
     @Override
-    public void deleteTicket(Long ticketId, Long requestingUserId) {
-        IncidentTicket ticket = findTicketOrThrow(ticketId);
+public void deleteTicket(Long ticketId, Long requestingUserId) {
+    IncidentTicket ticket = findTicketOrThrow(ticketId);
+    User requestingUser = findUserOrThrow(requestingUserId);
 
-        if (!ticket.getReporter().getId().equals(requestingUserId)) {
-            throw new RuntimeException("Not authorized to delete this ticket");
-        }
-        if (ticket.getStatus() != TicketStatus.OPEN) {
-            throw new RuntimeException("Only OPEN tickets can be deleted");
-        }
+    boolean isAdmin = requestingUser.getRoles().contains(Role.ADMIN);
+    boolean isReporter = ticket.getReporter().getId().equals(requestingUserId);
 
-        // Delete attachment files from disk
-        for (TicketAttachment attachment : ticket.getAttachments()) {
-            try {
-                Files.deleteIfExists(Paths.get(attachment.getFilePath()));
-            } catch (IOException e) {
-                // log but continue
-            }
-        }
-
-        ticketRepository.delete(ticket);
+    if (!isAdmin && !isReporter) {
+        throw new RuntimeException("Not authorized to delete this ticket");
     }
+
+    if (isReporter && !isAdmin && ticket.getStatus() != TicketStatus.OPEN) {
+        throw new RuntimeException("Only OPEN tickets can be deleted");
+    }
+
+    for (TicketAttachment attachment : ticket.getAttachments()) {
+        try {
+            Files.deleteIfExists(Paths.get(attachment.getFilePath()));
+        } catch (IOException e) {
+            // log but continue
+        }
+    }
+
+    ticketRepository.delete(ticket);
+}
  
     @Override
     public TicketAttachmentResponseDTO addAttachment(Long ticketId, MultipartFile file) {
