@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
-import { MessageCircle, X, Send, Bot, User, Loader } from 'lucide-react'
+import { MessageCircle, X, Send, Bot, User, Loader, GraduationCap } from 'lucide-react'
 
-// This is the "brain" of the chatbot
-// It tells OpenAI who it is and what it knows about your campus
-const SYSTEM_PROMPT = `You are SmartCampus Assistant, a helpful chatbot for the Smart Campus Operations Hub web system at SLIIT university.
+const SYSTEM_PROMPT = `You are SmartCampus Assistant, a helpful chatbot for the Smart Campus Operations Hub web system at SiverWood university.
 
 You help students and staff with:
 
@@ -49,7 +47,7 @@ export default function ChatBot() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hi! 👋 I\'m the SmartCampus Assistant. I can help you with bookings, tickets, and anything about this platform. What can I help you with?'
+      content: 'Hi! 👋 I\'m the SilverWood Campus Assistant. I can help you with bookings, tickets, and anything about this platform. What can I help you with?'
     }
   ])
   const [input, setInput] = useState('')
@@ -57,29 +55,21 @@ export default function ChatBot() {
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
 
-  // Auto scroll to bottom when new message arrives
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Focus input when chat opens
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => inputRef.current?.focus(), 100)
-    }
+    if (isOpen) setTimeout(() => inputRef.current?.focus(), 100)
   }, [isOpen])
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return
-
     const userMessage = input.trim()
     setInput('')
-
-    // Add user message to chat
     const newMessages = [...messages, { role: 'user', content: userMessage }]
     setMessages(newMessages)
     setLoading(true)
-
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
@@ -88,31 +78,19 @@ export default function ChatBot() {
           'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo', // cheap and fast, perfect for a chatbot
+          model: 'gpt-3.5-turbo',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            // Send last 10 messages for context (not all - saves API cost)
             ...newMessages.slice(-10)
           ],
           max_tokens: 500,
           temperature: 0.7
         })
       })
-
       const data = await response.json()
-
-      if (data.error) {
-        throw new Error(data.error.message)
-      }
-
-      const assistantMessage = data.choices[0].message.content
-
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: assistantMessage
-      }])
-
-    } catch (err) {
+      if (data.error) throw new Error(data.error.message)
+      setMessages(prev => [...prev, { role: 'assistant', content: data.choices[0].message.content }])
+    } catch {
       setMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Sorry, I\'m having trouble connecting right now. Please try again in a moment. 🙏'
@@ -122,87 +100,160 @@ export default function ChatBot() {
     }
   }
 
-  // Send message when user presses Enter
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage() }
   }
 
   return (
     <>
-      {/* Chat Window */}
-      {isOpen && (
-        <div className="fixed bottom-24 right-6 w-80 sm:w-96 h-[500px] bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden">
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Lato:wght@300;400;700&display=swap');
+        .sw-chat * { font-family: 'Lato', sans-serif; }
+        .sw-chat-messages::-webkit-scrollbar { width: 4px; }
+        .sw-chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .sw-chat-messages::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 4px; }
+        .sw-fab { transition: transform 0.2s, box-shadow 0.2s; }
+        .sw-fab:hover { transform: scale(1.08); }
+        .sw-chat-window {
+          animation: chatSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes chatSlideUp {
+          from { opacity: 0; transform: translateY(16px) scale(0.97); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
 
+      {/* ── Chat Window ───────────────────────────────────────────────────── */}
+      {isOpen && (
+        <div
+          className="sw-chat sw-chat-window fixed bottom-24 right-6 w-80 sm:w-96 flex flex-col z-50 overflow-hidden"
+          style={{
+            height: 500,
+            background: '#0d1829',
+            border: '1px solid rgba(201,168,76,0.25)',
+            borderRadius: 20,
+            boxShadow: '0 24px 64px rgba(0,0,0,0.45), 0 0 0 1px rgba(201,168,76,0.08)',
+          }}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-indigo-600 rounded-t-2xl">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
-                <Bot size={18} className="text-white" />
+          <div
+            style={{
+              background: 'linear-gradient(135deg, #1B2A4A 0%, #162238 100%)',
+              borderBottom: '1px solid rgba(201,168,76,0.2)',
+              padding: '14px 16px',
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                {/* Gold avatar */}
+                <div style={{
+                  width: 38, height: 38, borderRadius: 12,
+                  background: 'linear-gradient(135deg, #C9A84C, #e8c96a)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 4px 12px rgba(201,168,76,0.35)',
+                  flexShrink: 0,
+                }}>
+                  <GraduationCap size={20} color="#1B2A4A" />
+                </div>
+                <div>
+                  <p style={{ color: '#fff', fontWeight: 700, fontSize: 14, lineHeight: 1.2 }}>
+                    Campus Assistant
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 2 }}>
+                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80' }} />
+                    <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 11 }}>SilverWood University</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-white font-semibold text-sm">SmartCampus Assistant</p>
-                <p className="text-indigo-200 text-xs">Always here to help</p>
-              </div>
+              <button
+                onClick={() => setIsOpen(false)}
+                style={{
+                  color: 'rgba(255,255,255,0.4)', background: 'rgba(255,255,255,0.07)',
+                  border: 'none', borderRadius: 8, padding: 6, cursor: 'pointer', transition: 'color 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = '#C9A84C'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255,255,255,0.4)'}
+              >
+                <X size={18} />
+              </button>
             </div>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="text-white/70 hover:text-white transition-colors"
-            >
-              <X size={20} />
-            </button>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex gap-2 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-              >
+          <div
+            className="sw-chat-messages"
+            style={{ flex: 1, overflowY: 'auto', padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 12 }}
+          >
+            {messages.map((msg, i) => (
+              <div key={i} style={{
+                display: 'flex', gap: 8,
+                flexDirection: msg.role === 'user' ? 'row-reverse' : 'row',
+                alignItems: 'flex-end',
+              }}>
                 {/* Avatar */}
-                <div className={`w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center text-xs font-bold ${
-                  msg.role === 'user'
-                    ? 'bg-indigo-600 text-white'
-                    : 'bg-slate-700 text-slate-300'
-                }`}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: msg.role === 'user' ? '#C9A84C' : '#1B2A4A',
+                  border: msg.role === 'user' ? 'none' : '1px solid rgba(201,168,76,0.3)',
+                }}>
                   {msg.role === 'user'
-                    ? <User size={14} />
-                    : <Bot size={14} />
+                    ? <User size={13} color="#1B2A4A" />
+                    : <Bot size={13} color="#C9A84C" />
                   }
                 </div>
 
-                {/* Message bubble */}
-                <div className={`max-w-[75%] px-3 py-2 rounded-2xl text-sm leading-relaxed ${
-                  msg.role === 'user'
-                    ? 'bg-indigo-600 text-white rounded-tr-sm'
-                    : 'bg-slate-800 text-slate-200 rounded-tl-sm'
-                }`}>
+                {/* Bubble */}
+                <div style={{
+                  maxWidth: '75%', padding: '9px 13px', fontSize: 13, lineHeight: 1.55,
+                  borderRadius: msg.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                  background: msg.role === 'user'
+                    ? 'linear-gradient(135deg, #C9A84C, #d4b05e)'
+                    : 'rgba(255,255,255,0.06)',
+                  color: msg.role === 'user' ? '#1B2A4A' : 'rgba(255,255,255,0.85)',
+                  fontWeight: msg.role === 'user' ? 600 : 400,
+                  border: msg.role === 'user' ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                }}>
                   {msg.content}
                 </div>
               </div>
             ))}
 
-            {/* Loading indicator */}
+            {/* Loading dots */}
             {loading && (
-              <div className="flex gap-2">
-                <div className="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center">
-                  <Bot size={14} className="text-slate-300" />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
+                <div style={{
+                  width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: '#1B2A4A', border: '1px solid rgba(201,168,76,0.3)',
+                }}>
+                  <Bot size={13} color="#C9A84C" />
                 </div>
-                <div className="bg-slate-800 px-4 py-3 rounded-2xl rounded-tl-sm">
-                  <Loader size={16} className="text-slate-400 animate-spin" />
+                <div style={{
+                  padding: '10px 14px', borderRadius: '4px 16px 16px 16px',
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                }}>
+                  <Loader size={15} color="rgba(201,168,76,0.7)" className="animate-spin" />
                 </div>
               </div>
             )}
-
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-slate-800">
-            <div className="flex gap-2 items-center bg-slate-800 rounded-xl px-3 py-2">
+          <div style={{
+            padding: '12px 14px',
+            borderTop: '1px solid rgba(201,168,76,0.12)',
+            background: 'rgba(27,42,74,0.4)',
+            flexShrink: 0,
+          }}>
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(201,168,76,0.2)',
+              borderRadius: 12, padding: '8px 12px',
+            }}>
               <input
                 ref={inputRef}
                 type="text"
@@ -210,30 +261,54 @@ export default function ChatBot() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Ask me anything..."
-                className="flex-1 bg-transparent text-white text-sm placeholder-slate-500 focus:outline-none"
+                style={{
+                  flex: 1, background: 'transparent', border: 'none', outline: 'none',
+                  color: 'rgba(255,255,255,0.85)', fontSize: 13,
+                  fontFamily: 'Lato, sans-serif',
+                }}
               />
               <button
                 onClick={sendMessage}
                 disabled={!input.trim() || loading}
-                className="text-indigo-400 hover:text-indigo-300 disabled:text-slate-600 transition-colors flex-shrink-0"
+                style={{
+                  background: input.trim() && !loading ? '#C9A84C' : 'transparent',
+                  border: 'none', borderRadius: 8, padding: 6, cursor: input.trim() ? 'pointer' : 'default',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.2s',
+                  flexShrink: 0,
+                }}
               >
-                <Send size={18} />
+                <Send size={15} color={input.trim() && !loading ? '#1B2A4A' : 'rgba(255,255,255,0.2)'} />
               </button>
             </div>
-            <p className="text-slate-700 text-xs text-center mt-1.5">Powered by OpenAI</p>
+            <p style={{ color: 'rgba(255,255,255,0.15)', fontSize: 10, textAlign: 'center', marginTop: 6, letterSpacing: '0.05em' }}>
+              SILVERWOOD UNIVERSITY · SMART CAMPUS HUB
+            </p>
           </div>
         </div>
       )}
 
-      {/* Floating Button */}
+      {/* ── Floating Button ───────────────────────────────────────────────── */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center transition-all hover:scale-110 z-50"
-        title="SmartCampus Assistant"
+        className="sw-fab"
+        title="Campus Assistant"
+        style={{
+          position: 'fixed', bottom: 24, right: 24,
+          width: 56, height: 56, borderRadius: '50%', border: 'none',
+          background: isOpen
+            ? '#1B2A4A'
+            : 'linear-gradient(135deg, #C9A84C 0%, #e8c96a 100%)',
+          boxShadow: isOpen
+            ? '0 4px 20px rgba(27,42,74,0.4)'
+            : '0 4px 20px rgba(201,168,76,0.5), 0 0 0 4px rgba(201,168,76,0.12)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer', zIndex: 50,
+        }}
       >
         {isOpen
-          ? <X size={24} />
-          : <MessageCircle size={24} />
+          ? <X size={22} color="#C9A84C" />
+          : <MessageCircle size={22} color="#1B2A4A" />
         }
       </button>
     </>

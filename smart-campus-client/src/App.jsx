@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from './context/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import Footer from './components/Footer'
 
 // Auth Pages
 import Login from './pages/auth/Login'
@@ -32,9 +33,6 @@ import AdminResources from './pages/admin/AdminResources'
 import MyTicketsPage from './pages/user/MyTicketsPage'
 import AdminTicketsPage from './pages/admin/AdminTicketsPage'
 import TechnicianTicketsPage from './pages/technician/TechnicianTicketsPage'
-
-// User Management Page (New)
-import AdminUsersPage from './pages/admin/AdminUsersPage'
 
 export default function App() {
   return (
@@ -116,13 +114,6 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* ADMIN User Management route */}
-          <Route path="/admin/users" element={
-            <ProtectedRoute allowedRoles={['ADMIN']}>
-              <AdminUsersPage />
-            </ProtectedRoute>
-          } />
-
           {/* ADMIN booking route - Member 2 */}
           <Route path="/admin/bookings" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -169,6 +160,9 @@ export default function App() {
           } />
 
         </Routes>
+
+        {/* Footer — auto-hides on /login, /register, /oauth-callback */}
+        <Footer />
 
         {/* ChatBot - visible on ALL pages - Member 2 Innovation */}
         <ChatBot />
