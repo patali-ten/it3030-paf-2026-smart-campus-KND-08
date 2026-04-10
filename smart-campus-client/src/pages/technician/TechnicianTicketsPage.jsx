@@ -14,23 +14,22 @@ const STATUS_FLOW = {
 }
 
 const STATUS_COLORS = {
-  OPEN:        'bg-blue-500/20 text-blue-400',
-  IN_PROGRESS: 'bg-amber-500/20 text-amber-400',
-  RESOLVED:    'bg-green-500/20 text-green-400',
-  CLOSED:      'bg-slate-500/20 text-slate-400',
-  REJECTED:    'bg-red-500/20 text-red-400',
+  OPEN:        'bg-blue-100 text-blue-700 border border-blue-200',
+  IN_PROGRESS: 'bg-amber-100 text-amber-700 border border-amber-200',
+  RESOLVED:    'bg-green-100 text-green-700 border border-green-200',
+  CLOSED:      'bg-gray-100 text-gray-500 border border-gray-200',
+  REJECTED:    'bg-red-100 text-red-600 border border-red-200',
 }
 
 const PRIORITY_COLORS = {
-  LOW:      'text-green-400',
-  MEDIUM:   'text-amber-400',
-  HIGH:     'text-orange-400',
-  CRITICAL: 'text-red-400',
+  LOW:      'text-green-600 bg-green-50 border border-green-200',
+  MEDIUM:   'text-amber-600 bg-amber-50 border border-amber-200',
+  HIGH:     'text-orange-600 bg-orange-50 border border-orange-200',
+  CRITICAL: 'text-red-600 bg-red-50 border border-red-200',
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TechnicianTicketsContent — logic + UI only, no Navbar, no page shell
-// Used as a widget inside TechnicianDashboard AND inside the full page below
 // ─────────────────────────────────────────────────────────────────────────────
 export function TechnicianTicketsContent() {
   const { user } = useAuth()
@@ -119,66 +118,74 @@ export function TechnicianTicketsContent() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-white font-semibold flex items-center gap-2">
-        <Wrench size={18} className="text-amber-400" /> Assigned Tickets
+      {/* Section header */}
+      <h2 className="font-semibold flex items-center gap-2 text-base" style={{ color: '#1e3a5f' }}>
+        <Wrench size={18} style={{ color: '#c9a227' }} />
+        Assigned Tickets
       </h2>
 
       {loading ? (
-        <div className="text-center py-8 text-slate-500 text-sm">Loading...</div>
+        <div className="text-center py-10 text-sm" style={{ color: '#8a9bb0' }}>Loading…</div>
       ) : tickets.length === 0 ? (
-        <div className="text-center py-8 text-slate-600 text-sm">
+        <div className="text-center py-10 text-sm" style={{ color: '#8a9bb0' }}>
           No tickets assigned to you yet.
         </div>
       ) : (
         <div className="space-y-3">
           {tickets.map(ticket => {
             const allowedStatuses = STATUS_FLOW[ticket.status] || []
+            const isOpen = selectedTicket?.id === ticket.id
 
             return (
               <div
                 key={ticket.id}
-                className="bg-slate-800 border border-slate-700 rounded-2xl p-4 cursor-pointer hover:border-slate-500 transition"
+                className="bg-white border rounded-2xl p-4 cursor-pointer transition-shadow hover:shadow-md"
+                style={{ borderColor: isOpen ? '#c9a227' : '#dde3ea' }}
                 onClick={() => {
-                  setSelectedTicket(selectedTicket?.id === ticket.id ? null : ticket)
+                  setSelectedTicket(isOpen ? null : ticket)
                   setComment('')
                   setEditingComment(null)
                   setStatusForm({ status: '', resolutionNote: '' })
                 }}
               >
-                {/* Summary */}
+                {/* Summary row */}
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-white font-medium text-sm">{ticket.title}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_COLORS[ticket.status]}`}>
-                        {ticket.status}
+                      <span className="font-semibold text-sm" style={{ color: '#1e3a5f' }}>
+                        {ticket.title}
                       </span>
-                      <span className={`text-xs font-medium ${PRIORITY_COLORS[ticket.priority]}`}>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[ticket.status]}`}>
+                        {ticket.status.replace('_', ' ')}
+                      </span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[ticket.priority]}`}>
                         {ticket.priority}
                       </span>
                     </div>
-                    <p className="text-slate-400 text-xs mt-1">
+                    <p className="text-xs mt-1" style={{ color: '#5a6a7a' }}>
                       {ticket.location} · {ticket.category} · reported by {ticket.reporterName}
                     </p>
                   </div>
                   <ChevronDown
                     size={16}
-                    className={`text-slate-500 transition-transform ${selectedTicket?.id === ticket.id ? 'rotate-180' : ''}`}
+                    className={`transition-transform mt-0.5 flex-shrink-0 ${isOpen ? 'rotate-180' : ''}`}
+                    style={{ color: '#8a9bb0' }}
                   />
                 </div>
 
-                {/* Expanded */}
-                {selectedTicket?.id === ticket.id && (
+                {/* Expanded panel */}
+                {isOpen && (
                   <div
-                    className="mt-4 border-t border-slate-700 pt-4 space-y-4"
+                    className="mt-4 pt-4 space-y-4"
+                    style={{ borderTop: '1px solid #dde3ea' }}
                     onClick={e => e.stopPropagation()}
                   >
-                    <p className="text-slate-300 text-sm">{ticket.description}</p>
+                    <p className="text-sm" style={{ color: '#374151' }}>{ticket.description}</p>
 
                     {/* Attachments */}
                     {ticket.attachments?.length > 0 && (
                       <div>
-                        <p className="text-slate-400 text-xs mb-2">
+                        <p className="text-xs font-medium mb-2" style={{ color: '#5a6a7a' }}>
                           Attachments ({ticket.attachments.length})
                         </p>
                         <div className="flex gap-2 flex-wrap">
@@ -187,7 +194,8 @@ export function TechnicianTicketsContent() {
                               key={a.id}
                               src={a.fileUrl}
                               alt={a.fileName}
-                              className="w-24 h-24 object-cover rounded-lg border border-slate-700 cursor-pointer hover:scale-105 transition"
+                              className="w-24 h-24 object-cover rounded-xl border cursor-pointer hover:scale-105 transition-transform"
+                              style={{ borderColor: '#dde3ea' }}
                               onClick={() => window.open(a.fileUrl, '_blank')}
                             />
                           ))}
@@ -197,23 +205,31 @@ export function TechnicianTicketsContent() {
 
                     {/* Resolution Note */}
                     {ticket.resolutionNote && (
-                      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
-                        <p className="text-green-400 text-xs font-medium">Resolution Note</p>
-                        <p className="text-green-300 text-sm mt-1">{ticket.resolutionNote}</p>
+                      <div
+                        className="rounded-xl p-3"
+                        style={{ backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0' }}
+                      >
+                        <p className="text-xs font-semibold" style={{ color: '#16a34a' }}>Resolution Note</p>
+                        <p className="text-sm mt-1" style={{ color: '#15803d' }}>{ticket.resolutionNote}</p>
                       </div>
                     )}
 
                     {/* Update Status */}
                     {allowedStatuses.length > 0 && (
                       <div>
-                        <p className="text-slate-400 text-xs mb-2">Update Status</p>
+                        <p className="text-xs font-medium mb-2" style={{ color: '#5a6a7a' }}>Update Status</p>
                         <div className="space-y-2">
                           <select
-                            className="w-full bg-slate-900 border border-slate-600 text-white rounded-xl px-3 py-2 text-sm"
+                            className="w-full rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+                            style={{
+                              backgroundColor: '#f8f9fb',
+                              border: '1px solid #dde3ea',
+                              color: '#1e3a5f',
+                            }}
                             value={statusForm.status}
                             onChange={e => setStatusForm({ ...statusForm, status: e.target.value })}
                           >
-                            <option value="">Select status...</option>
+                            <option value="">Select status…</option>
                             {allowedStatuses.map(s => (
                               <option key={s} value={s}>{s.replace('_', ' ')}</option>
                             ))}
@@ -221,7 +237,12 @@ export function TechnicianTicketsContent() {
 
                           {statusForm.status === 'RESOLVED' && (
                             <textarea
-                              className="w-full bg-slate-900 border border-green-500/30 text-white rounded-xl px-3 py-2 text-sm resize-none"
+                              className="w-full rounded-xl px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-green-300"
+                              style={{
+                                backgroundColor: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                color: '#1e3a5f',
+                              }}
                               placeholder="Resolution note (optional)"
                               rows={2}
                               value={statusForm.resolutionNote}
@@ -233,9 +254,10 @@ export function TechnicianTicketsContent() {
                             <button
                               onClick={() => handleStatusUpdate(ticket.id)}
                               disabled={updating}
-                              className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm transition"
+                              className="w-full py-2 rounded-xl text-sm font-semibold transition-opacity disabled:opacity-50 hover:opacity-90"
+                              style={{ backgroundColor: '#1e3a5f', color: '#ffffff' }}
                             >
-                              {updating ? 'Updating...' : `Set to ${statusForm.status.replace('_', ' ')}`}
+                              {updating ? 'Updating…' : `Set to ${statusForm.status.replace('_', ' ')}`}
                             </button>
                           )}
                         </div>
@@ -244,75 +266,97 @@ export function TechnicianTicketsContent() {
 
                     {/* Terminal state notice */}
                     {allowedStatuses.length === 0 && (
-                      <div className="bg-slate-700/40 rounded-xl p-3 text-center">
-                        <p className="text-slate-400 text-xs">
-                          Ticket is <strong className="text-slate-300">{ticket.status}</strong> — no further changes allowed.
-                        </p>
+                      <div
+                        className="rounded-xl p-3 text-center text-xs"
+                        style={{ backgroundColor: '#f8f9fb', border: '1px solid #dde3ea', color: '#5a6a7a' }}
+                      >
+                        Ticket is <strong style={{ color: '#1e3a5f' }}>{ticket.status}</strong> — no further changes allowed.
                       </div>
                     )}
 
                     {/* Comments */}
                     <div>
-                      <p className="text-slate-400 text-xs mb-2">
+                      <p className="text-xs font-medium mb-2" style={{ color: '#5a6a7a' }}>
                         Comments ({ticket.comments?.length || 0})
                       </p>
-                      <div className="space-y-2 max-h-40 overflow-y-auto">
+
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                         {ticket.comments?.length === 0 && (
-                          <p className="text-slate-600 text-xs text-center py-2">No comments yet.</p>
+                          <p className="text-xs text-center py-3" style={{ color: '#8a9bb0' }}>No comments yet.</p>
                         )}
                         {ticket.comments?.map(c => (
-                          <div key={c.id} className="bg-slate-900 rounded-xl p-3">
+                          <div
+                            key={c.id}
+                            className="rounded-xl p-3"
+                            style={{ backgroundColor: '#f8f9fb', border: '1px solid #dde3ea' }}
+                          >
                             <div className="flex items-center justify-between mb-1">
-                              <p className="text-indigo-400 text-xs font-medium">{c.authorName}</p>
+                              <p className="text-xs font-semibold" style={{ color: '#1e3a5f' }}>{c.authorName}</p>
                               {c.authorId === user.userId && (
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                   <button
                                     onClick={() => setEditingComment({ id: c.id, content: c.content })}
-                                    className="text-xs text-slate-400 hover:text-white transition"
+                                    className="text-xs hover:underline"
+                                    style={{ color: '#5a6a7a' }}
                                   >
                                     Edit
                                   </button>
                                   <button
                                     onClick={() => handleDeleteComment(c.id)}
-                                    className="text-xs text-red-400 hover:text-red-300 transition"
+                                    className="text-xs hover:underline"
+                                    style={{ color: '#dc2626' }}
                                   >
                                     Delete
                                   </button>
                                 </div>
                               )}
                             </div>
+
                             {editingComment?.id === c.id ? (
                               <div className="flex gap-2 mt-1">
                                 <input
-                                  className="flex-1 bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-1 text-sm"
+                                  className="flex-1 rounded-xl px-3 py-1 text-sm outline-none"
+                                  style={{
+                                    backgroundColor: '#ffffff',
+                                    border: '1px solid #c9a227',
+                                    color: '#1e3a5f',
+                                  }}
                                   value={editingComment.content}
                                   onChange={e => setEditingComment({ ...editingComment, content: e.target.value })}
                                   onKeyDown={e => e.key === 'Enter' && handleEditComment(c.id)}
                                 />
                                 <button
                                   onClick={() => handleEditComment(c.id)}
-                                  className="bg-indigo-600 text-white px-3 py-1 rounded-xl text-sm"
+                                  className="px-3 py-1 rounded-xl text-sm font-medium text-white"
+                                  style={{ backgroundColor: '#1e3a5f' }}
                                 >
                                   Save
                                 </button>
                                 <button
                                   onClick={() => setEditingComment(null)}
-                                  className="text-slate-400 px-2"
+                                  className="px-2"
+                                  style={{ color: '#8a9bb0' }}
                                 >
                                   <X size={14} />
                                 </button>
                               </div>
                             ) : (
-                              <p className="text-slate-300 text-sm">{c.content}</p>
+                              <p className="text-sm" style={{ color: '#374151' }}>{c.content}</p>
                             )}
                           </div>
                         ))}
                       </div>
 
+                      {/* Add comment */}
                       <div className="flex gap-2 mt-3">
                         <input
-                          className="flex-1 bg-slate-900 border border-slate-600 text-white rounded-xl px-3 py-2 text-sm"
-                          placeholder="Add a comment..."
+                          className="flex-1 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#c9a227]/40"
+                          style={{
+                            backgroundColor: '#f8f9fb',
+                            border: '1px solid #dde3ea',
+                            color: '#1e3a5f',
+                          }}
+                          placeholder="Add a comment…"
                           value={comment}
                           onChange={e => setComment(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && handleComment(ticket.id)}
@@ -320,7 +364,8 @@ export function TechnicianTicketsContent() {
                         <button
                           onClick={() => handleComment(ticket.id)}
                           disabled={!comment.trim()}
-                          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white px-3 py-2 rounded-xl transition"
+                          className="px-3 py-2 rounded-xl transition-opacity disabled:opacity-40 hover:opacity-90"
+                          style={{ backgroundColor: '#1e3a5f', color: '#ffffff' }}
                         >
                           <Send size={14} />
                         </button>
@@ -339,14 +384,16 @@ export function TechnicianTicketsContent() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TechnicianTicketsPage — full standalone page, used by /technician/tickets route
+// TechnicianTicketsPage — full standalone page
 // ─────────────────────────────────────────────────────────────────────────────
 export default function TechnicianTicketsPage() {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen" style={{ backgroundColor: '#f0f2f5' }}>
       <Navbar />
       <div className="max-w-3xl mx-auto px-4 pt-24 pb-16">
-        <TechnicianTicketsContent />
+        <div className="bg-white border border-[#dde3ea] rounded-2xl p-6 shadow-sm">
+          <TechnicianTicketsContent />
+        </div>
       </div>
     </div>
   )

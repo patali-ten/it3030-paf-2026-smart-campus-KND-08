@@ -10,26 +10,15 @@ import {
 } from '../api/notifications'
 import { formatDistanceToNow } from 'date-fns'
 
-const TYPE_COLORS = {
-  BOOKING_APPROVED: 'bg-emerald-500',
-  BOOKING_REJECTED: 'bg-red-500',
-  TICKET_IN_PROGRESS: 'bg-amber-500',
-  TICKET_RESOLVED: 'bg-emerald-500',
-  TICKET_CLOSED: 'bg-slate-500',
-  TICKET_REJECTED: 'bg-red-500',
-  NEW_COMMENT: 'bg-blue-500',
-  SYSTEM: 'bg-purple-500',
-}
-
 const TYPE_ICONS = {
-  BOOKING_APPROVED: '✅',
-  BOOKING_REJECTED: '❌',
+  BOOKING_APPROVED:   '✅',
+  BOOKING_REJECTED:   '❌',
   TICKET_IN_PROGRESS: '🔧',
-  TICKET_RESOLVED: '✅',
-  TICKET_CLOSED: '🔒',
-  TICKET_REJECTED: '❌',
-  NEW_COMMENT: '💬',
-  SYSTEM: '📢',
+  TICKET_RESOLVED:    '✅',
+  TICKET_CLOSED:      '🔒',
+  TICKET_REJECTED:    '❌',
+  NEW_COMMENT:        '💬',
+  SYSTEM:             '📢',
 }
 
 export default function NotificationPanel() {
@@ -55,12 +44,10 @@ export default function NotificationPanel() {
 
   useEffect(() => {
     fetchData()
-    // Poll every 30 seconds for new notifications
     const interval = setInterval(fetchData, 30000)
     return () => clearInterval(interval)
   }, [user])
 
-  // Close panel when clicking outside
   useEffect(() => {
     const handleClick = (e) => {
       if (panelRef.current && !panelRef.current.contains(e.target)) {
@@ -86,19 +73,22 @@ export default function NotificationPanel() {
     fetchData()
   }
 
-  // Show only the 5 most recent in the dropdown
   const recentNotifs = notifications.slice(0, 5)
 
   return (
     <div className="relative" ref={panelRef}>
-      {/* Bell Button */}
+      {/* Bell Button — inherits Navbar styling, just swap colours */}
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-all duration-200"
+        className="relative p-2 rounded-xl transition-all duration-200"
+        style={{ color: 'rgba(255,255,255,0.75)' }}
       >
         <Bell size={22} />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse">
+          <span
+            className="absolute -top-1 -right-1 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 animate-pulse"
+            style={{ backgroundColor: '#dc2626' }}
+          >
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -106,29 +96,49 @@ export default function NotificationPanel() {
 
       {/* Dropdown Panel */}
       {open && (
-        <div className="absolute right-0 top-12 w-96 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl z-50 overflow-hidden">
+        <div
+          className="absolute right-0 top-12 w-96 rounded-2xl shadow-2xl z-50 overflow-hidden"
+          style={{
+            backgroundColor: '#ffffff',
+            border: '1px solid #dde3ea',
+          }}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700 bg-slate-800">
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{
+              backgroundColor: '#1e3a5f',
+              borderBottom: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
             <div className="flex items-center gap-2">
-              <Bell size={16} className="text-indigo-400" />
+              <Bell size={15} style={{ color: '#c9a227' }} />
               <span className="font-semibold text-white text-sm">Notifications</span>
               {unreadCount > 0 && (
-                <span className="bg-indigo-600 text-white text-xs px-2 py-0.5 rounded-full">
+                <span
+                  className="text-white text-xs px-2 py-0.5 rounded-full font-medium"
+                  style={{ backgroundColor: '#c9a227', color: '#1e3a5f' }}
+                >
                   {unreadCount} new
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {unreadCount > 0 && (
                 <button
                   onClick={handleMarkAll}
-                  className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1"
+                  className="text-xs flex items-center gap-1 transition-opacity hover:opacity-80"
+                  style={{ color: 'rgba(255,255,255,0.75)' }}
                 >
-                  <CheckCheck size={14} /> Mark all read
+                  <CheckCheck size={13} /> Mark all read
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white">
-                <X size={16} />
+              <button
+                onClick={() => setOpen(false)}
+                className="transition-opacity hover:opacity-80"
+                style={{ color: 'rgba(255,255,255,0.6)' }}
+              >
+                <X size={15} />
               </button>
             </div>
           </div>
@@ -136,32 +146,37 @@ export default function NotificationPanel() {
           {/* Notification List */}
           <div className="max-h-80 overflow-y-auto">
             {recentNotifs.length === 0 ? (
-              <div className="text-center py-10 text-slate-500">
-                <Bell size={32} className="mx-auto mb-2 opacity-30" />
+              <div className="text-center py-10" style={{ color: '#8a9bb0' }}>
+                <Bell size={30} className="mx-auto mb-2 opacity-30" />
                 <p className="text-sm">No notifications yet</p>
               </div>
             ) : (
               recentNotifs.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`flex gap-3 px-4 py-3 border-b border-slate-800 hover:bg-slate-800/50 transition-colors ${
-                    !notif.isRead ? 'bg-slate-800/30' : ''
-                  }`}
+                  className="flex gap-3 px-4 py-3 transition-colors"
+                  style={{
+                    borderBottom: '1px solid #f0f2f5',
+                    backgroundColor: !notif.isRead ? '#f8f6ef' : '#ffffff',
+                  }}
                 >
-                  {/* Type dot */}
-                  <div className="mt-1 flex-shrink-0">
+                  {/* Icon */}
+                  <div className="mt-0.5 flex-shrink-0">
                     <span className="text-lg">{TYPE_ICONS[notif.type] || '🔔'}</span>
                   </div>
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-medium ${!notif.isRead ? 'text-white' : 'text-slate-300'}`}>
+                    <p
+                      className="text-sm font-medium leading-snug"
+                      style={{ color: !notif.isRead ? '#1e3a5f' : '#374151' }}
+                    >
                       {notif.title}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5 leading-relaxed line-clamp-2">
+                    <p className="text-xs mt-0.5 leading-relaxed line-clamp-2" style={{ color: '#5a6a7a' }}>
                       {notif.message}
                     </p>
-                    <p className="text-xs text-slate-600 mt-1">
+                    <p className="text-xs mt-1" style={{ color: '#8a9bb0' }}>
                       {notif.createdAt
                         ? formatDistanceToNow(new Date(notif.createdAt), { addSuffix: true })
                         : ''}
@@ -173,7 +188,8 @@ export default function NotificationPanel() {
                     {!notif.isRead && (
                       <button
                         onClick={() => handleMarkAsRead(notif.id)}
-                        className="text-indigo-400 hover:text-indigo-300 p-1"
+                        className="p-1 rounded-lg transition-colors hover:bg-[#1e3a5f]/10"
+                        style={{ color: '#1e3a5f' }}
                         title="Mark as read"
                       >
                         <Check size={14} />
@@ -181,7 +197,8 @@ export default function NotificationPanel() {
                     )}
                     <button
                       onClick={() => handleDelete(notif.id)}
-                      className="text-slate-600 hover:text-red-400 p-1"
+                      className="p-1 rounded-lg transition-colors hover:bg-red-50"
+                      style={{ color: '#8a9bb0' }}
                       title="Delete"
                     >
                       <Trash2 size={14} />
@@ -192,13 +209,17 @@ export default function NotificationPanel() {
             )}
           </div>
 
-          {/* Footer — View All */}
-          <div className="px-4 py-3 bg-slate-800 text-center">
+          {/* Footer */}
+          <div
+            className="px-4 py-3 text-center"
+            style={{ backgroundColor: '#f8f9fb', borderTop: '1px solid #dde3ea' }}
+          >
             <a
               href={`/${user?.role?.toLowerCase()}/notifications`}
-              className="text-xs text-indigo-400 hover:text-indigo-300 font-medium"
+              className="text-xs font-semibold transition-opacity hover:opacity-75"
+              style={{ color: '#1e3a5f' }}
               onClick={() => setOpen(false)}
-            > 
+            >
               View all notifications →
             </a>
           </div>
