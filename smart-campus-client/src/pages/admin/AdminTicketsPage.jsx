@@ -14,19 +14,20 @@ import {
 import { Wrench, ChevronDown, Send, Paperclip, X, User, MapPin, Tag, Clock, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+// Updated Palette based on "Option B — Navy & Gold"
 const STATUS_COLORS = {
-  OPEN:        'bg-blue-500/20 text-blue-400 border border-blue-500/30',
-  IN_PROGRESS: 'bg-amber-500/20 text-amber-400 border border-amber-500/30',
-  RESOLVED:    'bg-green-500/20 text-green-400 border border-green-500/30',
-  CLOSED:      'bg-slate-500/20 text-slate-400 border border-slate-500/30',
-  REJECTED:    'bg-red-500/20 text-red-400 border border-red-500/30',
+  OPEN:        'bg-blue-100 text-blue-700 border border-blue-200',
+  IN_PROGRESS: 'bg-amber-100 text-amber-700 border border-amber-200',
+  RESOLVED:    'bg-green-100 text-green-700 border border-green-200',
+  CLOSED:      'bg-gray-100 text-gray-600 border border-gray-200',
+  REJECTED:    'bg-red-100 text-red-700 border border-red-200',
 }
 
 const PRIORITY_COLORS = {
-  LOW:      'bg-green-500/10 text-green-400 border border-green-500/20',
-  MEDIUM:   'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  HIGH:     'bg-orange-500/10 text-orange-400 border border-orange-500/20',
-  CRITICAL: 'bg-red-500/10 text-red-400 border border-red-500/20',
+  LOW:      'bg-green-50 text-green-600 border border-green-100',
+  MEDIUM:   'bg-amber-50 text-amber-600 border border-amber-100',
+  HIGH:     'bg-orange-50 text-orange-600 border border-orange-100',
+  CRITICAL: 'bg-red-50 text-red-600 border border-red-100',
 }
 
 const STATUS_FLOW = {
@@ -100,8 +101,6 @@ export function AdminTicketsContent() {
   if (!assigneeId.trim()) return toast.error('Enter a technician user ID')
   try {
     setUpdating(true)
-
-    // Validate user is a TECHNICIAN
     const userRes = await getUserById(parseInt(assigneeId))
     const targetUser = userRes.data
     if (!targetUser.roles || !targetUser.roles.includes('TECHNICIAN')) {
@@ -178,26 +177,26 @@ export function AdminTicketsContent() {
   })
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       <div className="flex items-center justify-between flex-wrap gap-3">
-        <h2 className="text-white font-semibold flex items-center gap-2 text-lg">
-          <Wrench size={20} className="text-rose-400" /> All Tickets
+        <h2 className="text-[#1e3a5f] font-bold flex items-center gap-2 text-2xl">
+          <Wrench size={24} className="text-[#d4a017]" /> All Tickets
           {!loading && (
-            <span className="text-slate-500 text-sm font-normal">({filtered.length} shown)</span>
+            <span className="text-gray-400 text-sm font-normal">({filtered.length} shown)</span>
           )}
         </h2>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-3 p-4 bg-white border border-gray-200 rounded-2xl shadow-sm">
         <input
-          className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm flex-1 min-w-[160px]"
-          placeholder="Search title, reporter, location..."
+          className="bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-2 text-sm flex-1 min-w-[200px] focus:ring-2 focus:ring-[#1e3a5f] outline-none"
+          placeholder="Search tickets..."
           value={search}
           onChange={e => setSearch(e.target.value)}
         />
         <select
-          className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm"
+          className="bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#1e3a5f]"
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
         >
@@ -207,7 +206,7 @@ export function AdminTicketsContent() {
           ))}
         </select>
         <select
-          className="bg-slate-800 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm"
+          className="bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-[#1e3a5f]"
           value={filterPriority}
           onChange={e => setFilterPriority(e.target.value)}
         >
@@ -219,11 +218,11 @@ export function AdminTicketsContent() {
       </div>
 
       {loading ? (
-        <div className="text-center py-12 text-slate-500 text-sm">Loading tickets...</div>
+        <div className="text-center py-12 text-gray-400 text-sm">Loading tickets...</div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-slate-600 text-sm">No tickets match your filters.</div>
+        <div className="text-center py-12 text-gray-400 text-sm">No tickets match your filters.</div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-4">
           {filtered.map(ticket => {
             const isExpanded      = selectedTicket?.id === ticket.id
             const allowedStatuses = STATUS_FLOW[ticket.status] || []
@@ -231,10 +230,10 @@ export function AdminTicketsContent() {
             return (
               <div
                 key={ticket.id}
-                className="bg-slate-800 border border-slate-700 rounded-2xl overflow-hidden hover:border-slate-500 transition"
+                className={`bg-white border transition-all duration-200 rounded-2xl overflow-hidden shadow-sm ${isExpanded ? 'border-[#1e3a5f] ring-1 ring-[#1e3a5f]/10' : 'border-gray-200 hover:border-[#d4a017]'}`}
               >
                 <div
-                  className="p-4 cursor-pointer"
+                  className="p-5 cursor-pointer"
                   onClick={() => {
                     setSelectedTicket(isExpanded ? null : ticket)
                     setComment('')
@@ -245,44 +244,44 @@ export function AdminTicketsContent() {
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-white font-semibold text-sm">{ticket.title}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${STATUS_COLORS[ticket.status]}`}>
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <span className="text-[#1e3a5f] font-bold text-base">{ticket.title}</span>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${STATUS_COLORS[ticket.status]}`}>
                           {ticket.status.replace('_', ' ')}
                         </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${PRIORITY_COLORS[ticket.priority]}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${PRIORITY_COLORS[ticket.priority]}`}>
                           {ticket.priority}
                         </span>
                       </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1.5">
-                        <span className="text-slate-400 text-xs flex items-center gap-1">
-                          <User size={10} /> {ticket.reporterName}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1">
+                        <span className="text-gray-500 text-xs flex items-center gap-1.5">
+                          <User size={14} className="text-[#1e3a5f]" /> {ticket.reporterName}
                         </span>
-                        <span className="text-slate-400 text-xs flex items-center gap-1">
-                          <MapPin size={10} /> {ticket.location}
+                        <span className="text-gray-500 text-xs flex items-center gap-1.5">
+                          <MapPin size={14} className="text-[#1e3a5f]" /> {ticket.location}
                         </span>
-                        <span className="text-slate-400 text-xs flex items-center gap-1">
-                          <Tag size={10} /> {ticket.category}
+                        <span className="text-gray-500 text-xs flex items-center gap-1.5">
+                          <Tag size={14} className="text-[#1e3a5f]" /> {ticket.category}
                         </span>
                         {ticket.createdAt && (
-                          <span className="text-slate-500 text-xs flex items-center gap-1">
-                            <Clock size={10} /> {new Date(ticket.createdAt).toLocaleDateString()}
+                          <span className="text-gray-400 text-xs flex items-center gap-1.5 ml-auto">
+                            <Clock size={14} /> {new Date(ticket.createdAt).toLocaleDateString()}
                           </span>
                         )}
                       </div>
                       {ticket.assigneeName && (
-                        <p className="text-indigo-400 text-xs mt-1">
-                          Assigned to: <strong>{ticket.assigneeName}</strong>
-                        </p>
-                      )}
-                      {ticket.contactDetails && (
-                        <p className="text-slate-500 text-xs mt-0.5">Contact: {ticket.contactDetails}</p>
+                        <div className="mt-3 flex items-center gap-2">
+                           <div className="h-1.5 w-1.5 rounded-full bg-[#d4a017]"></div>
+                           <p className="text-[#1e3a5f] text-xs font-medium">
+                            Assigned to: <span className="font-bold">{ticket.assigneeName}</span>
+                          </p>
+                        </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-3 shrink-0">
                       {ticket.attachments?.length > 0 && (
-                        <span className="text-slate-400 text-xs flex items-center gap-0.5">
-                          <Paperclip size={11} /> {ticket.attachments.length}
+                        <span className="text-gray-400 text-xs flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-lg border border-gray-100">
+                          <Paperclip size={12} /> {ticket.attachments.length}
                         </span>
                       )}
                       <button
@@ -290,14 +289,14 @@ export function AdminTicketsContent() {
                           e.stopPropagation()
                           setConfirmDeleteId(ticket.id)
                         }}
-                        className="text-red-400 hover:text-red-300 transition p-1 rounded-lg hover:bg-red-500/10"
+                        className="text-red-400 hover:text-red-600 transition p-1.5 rounded-full hover:bg-red-50"
                         title="Delete ticket"
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                       <ChevronDown
-                        size={16}
-                        className={`text-slate-500 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        size={20}
+                        className={`text-gray-400 transition-transform ${isExpanded ? 'rotate-180 text-[#1e3a5f]' : ''}`}
                       />
                     </div>
                   </div>
@@ -305,31 +304,31 @@ export function AdminTicketsContent() {
 
                 {isExpanded && (
                   <div
-                    className="border-t border-slate-700 p-4 space-y-5"
+                    className="bg-gray-50/50 border-t border-gray-100 p-6 space-y-6"
                     onClick={e => e.stopPropagation()}
                   >
                     <div>
-                      <p className="text-slate-400 text-xs font-medium mb-1 uppercase tracking-wide">Description</p>
-                      <p className="text-slate-200 text-sm leading-relaxed">{ticket.description}</p>
+                      <p className="text-[#1e3a5f] text-[10px] font-bold mb-2 uppercase tracking-widest">Description</p>
+                      <p className="text-gray-700 text-sm leading-relaxed bg-white p-4 rounded-xl border border-gray-100 shadow-sm">{ticket.description}</p>
                     </div>
 
                     {ticket.resolutionNote && (
-                      <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-3">
-                        <p className="text-green-400 text-xs font-semibold uppercase tracking-wide mb-1">Resolution Note</p>
-                        <p className="text-green-200 text-sm">{ticket.resolutionNote}</p>
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                        <p className="text-green-800 text-[10px] font-bold uppercase tracking-widest mb-1">Resolution Note</p>
+                        <p className="text-green-700 text-sm">{ticket.resolutionNote}</p>
                       </div>
                     )}
 
                     {ticket.rejectionReason && (
-                      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-                        <p className="text-red-400 text-xs font-semibold uppercase tracking-wide mb-1">Rejection Reason</p>
-                        <p className="text-red-200 text-sm">{ticket.rejectionReason}</p>
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4">
+                        <p className="text-red-800 text-[10px] font-bold uppercase tracking-widest mb-1">Rejection Reason</p>
+                        <p className="text-red-700 text-sm">{ticket.rejectionReason}</p>
                       </div>
                     )}
 
                     {ticket.attachments?.length > 0 && (
                       <div>
-                        <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
+                        <p className="text-[#1e3a5f] text-[10px] font-bold mb-2 uppercase tracking-widest">
                           Attachments ({ticket.attachments.length}/3)
                         </p>
                         <div className="flex gap-2 flex-wrap">
@@ -339,9 +338,9 @@ export function AdminTicketsContent() {
                               href={a.fileUrl}
                               target="_blank"
                               rel="noreferrer"
-                              className="flex items-center gap-1.5 bg-slate-700 hover:bg-slate-600 text-indigo-300 text-xs px-3 py-1.5 rounded-lg transition"
+                              className="flex items-center gap-2 bg-white border border-gray-200 hover:border-[#1e3a5f] text-[#1e3a5f] text-xs px-4 py-2 rounded-xl transition shadow-sm font-medium"
                             >
-                              <Paperclip size={11} /> {a.fileName}
+                              <Paperclip size={12} /> {a.fileName}
                             </a>
                           ))}
                         </div>
@@ -349,13 +348,13 @@ export function AdminTicketsContent() {
                     )}
 
                     {ticket.status !== 'CLOSED' && ticket.status !== 'REJECTED' && (
-                      <div>
-                        <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
+                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-[#1e3a5f] text-[10px] font-bold mb-3 uppercase tracking-widest">
                           {ticket.assigneeName ? 'Reassign Technician' : 'Assign Technician'}
                         </p>
                         <div className="flex gap-2">
                           <input
-                            className="flex-1 bg-slate-900 border border-slate-600 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500"
+                            className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-2 text-sm placeholder:text-gray-400 focus:ring-1 focus:ring-[#1e3a5f] outline-none"
                             placeholder="Enter technician user ID"
                             value={assigneeId}
                             onChange={e => setAssigneeId(e.target.value)}
@@ -364,7 +363,7 @@ export function AdminTicketsContent() {
                           <button
                             onClick={() => handleAssign(ticket.id)}
                             disabled={updating || !assigneeId.trim()}
-                            className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white px-4 py-2 rounded-xl text-sm transition font-medium"
+                            className="bg-[#1e3a5f] hover:bg-[#162a45] disabled:opacity-50 text-white px-6 py-2 rounded-xl text-sm transition font-bold"
                           >
                             Assign
                           </button>
@@ -373,11 +372,11 @@ export function AdminTicketsContent() {
                     )}
 
                     {allowedStatuses.length > 0 && (
-                      <div>
-                        <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">Update Status</p>
-                        <div className="space-y-2">
+                      <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p className="text-[#1e3a5f] text-[10px] font-bold mb-3 uppercase tracking-widest">Update Status</p>
+                        <div className="space-y-3">
                           <select
-                            className="w-full bg-slate-900 border border-slate-600 text-white rounded-xl px-3 py-2 text-sm"
+                            className="w-full bg-gray-50 border border-gray-300 text-gray-900 rounded-xl px-4 py-2 text-sm focus:ring-1 focus:ring-[#1e3a5f] outline-none"
                             value={statusForm.status}
                             onChange={e => setStatusForm({ status: e.target.value, rejectionReason: '', resolutionNote: '' })}
                           >
@@ -388,7 +387,7 @@ export function AdminTicketsContent() {
                           </select>
                           {statusForm.status === 'REJECTED' && (
                             <input
-                              className="w-full bg-slate-900 border border-red-500/50 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500"
+                              className="w-full bg-red-50 border border-red-200 text-red-900 rounded-xl px-4 py-2 text-sm placeholder:text-red-400 focus:ring-1 focus:ring-red-500 outline-none"
                               placeholder="Rejection reason (required) *"
                               value={statusForm.rejectionReason}
                               onChange={e => setStatusForm({ ...statusForm, rejectionReason: e.target.value })}
@@ -396,7 +395,7 @@ export function AdminTicketsContent() {
                           )}
                           {statusForm.status === 'RESOLVED' && (
                             <textarea
-                              className="w-full bg-slate-900 border border-green-500/30 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500 resize-none"
+                              className="w-full bg-green-50 border border-green-200 text-green-900 rounded-xl px-4 py-2 text-sm placeholder:text-green-400 resize-none focus:ring-1 focus:ring-green-500 outline-none"
                               placeholder="Resolution note (optional)"
                               rows={2}
                               value={statusForm.resolutionNote}
@@ -407,7 +406,7 @@ export function AdminTicketsContent() {
                             <button
                               onClick={() => handleStatusUpdate(ticket.id)}
                               disabled={updating}
-                              className="w-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white py-2 rounded-xl text-sm transition font-medium"
+                              className="w-full bg-[#d4a017] hover:bg-[#b88a14] disabled:opacity-50 text-[#1e3a5f] py-2.5 rounded-xl text-sm transition font-bold"
                             >
                               {updating ? 'Updating...' : `Set to ${statusForm.status.replace('_', ' ')}`}
                             </button>
@@ -417,43 +416,43 @@ export function AdminTicketsContent() {
                     )}
 
                     {allowedStatuses.length === 0 && (
-                      <div className="bg-slate-700/40 rounded-xl p-3 text-center">
-                        <p className="text-slate-400 text-xs">
-                          This ticket is <strong className="text-slate-300">{ticket.status}</strong> — no further status changes allowed.
+                      <div className="bg-gray-100 rounded-xl p-4 text-center border border-gray-200">
+                        <p className="text-gray-500 text-xs font-medium">
+                          Status locked: <strong className="text-[#1e3a5f]">{ticket.status}</strong>
                         </p>
                       </div>
                     )}
 
                     <div>
-                      <p className="text-slate-400 text-xs font-medium mb-2 uppercase tracking-wide">
+                      <p className="text-[#1e3a5f] text-[10px] font-bold mb-3 uppercase tracking-widest">
                         Comments ({ticket.comments?.length || 0})
                       </p>
-                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                         {ticket.comments?.length === 0 && (
-                          <p className="text-slate-600 text-xs text-center py-2">No comments yet.</p>
+                          <p className="text-gray-400 text-xs text-center py-4 bg-white rounded-xl border border-dashed border-gray-200">No comments yet.</p>
                         )}
                         {ticket.comments?.map(c => (
-                          <div key={c.id} className="bg-slate-900 rounded-xl p-3">
-                            <div className="flex items-center justify-between mb-1">
+                          <div key={c.id} className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                            <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-2">
-                                <p className="text-indigo-400 text-xs font-semibold">{c.authorName}</p>
+                                <p className="text-[#1e3a5f] text-xs font-bold">{c.authorName}</p>
                                 {c.createdAt && (
-                                  <p className="text-slate-600 text-xs">
+                                  <p className="text-gray-400 text-[10px]">
                                     {new Date(c.createdAt).toLocaleDateString()}
                                   </p>
                                 )}
                               </div>
                               {c.authorId === user.userId && (
-                                <div className="flex gap-2">
+                                <div className="flex gap-3">
                                   <button
                                     onClick={() => setEditingComment({ id: c.id, content: c.content })}
-                                    className="text-xs text-slate-400 hover:text-white transition"
+                                    className="text-[10px] font-bold text-[#d4a017] hover:underline transition"
                                   >
                                     Edit
                                   </button>
                                   <button
                                     onClick={() => handleDeleteComment(c.id)}
-                                    className="text-xs text-red-400 hover:text-red-300 transition"
+                                    className="text-[10px] font-bold text-red-500 hover:underline transition"
                                   >
                                     Delete
                                   </button>
@@ -461,36 +460,36 @@ export function AdminTicketsContent() {
                               )}
                             </div>
                             {editingComment?.id === c.id ? (
-                              <div className="flex gap-2 mt-1">
+                              <div className="flex gap-2 mt-2">
                                 <input
-                                  className="flex-1 bg-slate-800 border border-slate-600 text-white rounded-xl px-3 py-1 text-sm"
+                                  className="flex-1 bg-gray-50 border border-gray-300 text-gray-900 rounded-lg px-3 py-1.5 text-sm outline-none"
                                   value={editingComment.content}
                                   onChange={e => setEditingComment({ ...editingComment, content: e.target.value })}
                                   onKeyDown={e => e.key === 'Enter' && handleEditComment(c.id)}
                                 />
                                 <button
                                   onClick={() => handleEditComment(c.id)}
-                                  className="bg-indigo-600 text-white px-3 py-1 rounded-xl text-sm"
+                                  className="bg-[#1e3a5f] text-white px-4 py-1.5 rounded-lg text-xs font-bold"
                                 >
                                   Save
                                 </button>
                                 <button
                                   onClick={() => setEditingComment(null)}
-                                  className="text-slate-400 px-2 text-sm"
+                                  className="text-gray-400 hover:text-gray-600 transition"
                                 >
-                                  <X size={14} />
+                                  <X size={16} />
                                 </button>
                               </div>
                             ) : (
-                              <p className="text-slate-300 text-sm">{c.content}</p>
+                              <p className="text-gray-600 text-sm">{c.content}</p>
                             )}
                           </div>
                         ))}
                       </div>
-                      <div className="flex gap-2 mt-3">
+                      <div className="flex gap-2 mt-4">
                         <input
-                          className="flex-1 bg-slate-900 border border-slate-700 text-white rounded-xl px-3 py-2 text-sm placeholder:text-slate-500"
-                          placeholder="Add a comment..."
+                          className="flex-1 bg-white border border-gray-300 text-gray-900 rounded-xl px-4 py-2.5 text-sm placeholder:text-gray-400 focus:ring-1 focus:ring-[#1e3a5f] outline-none"
+                          placeholder="Add a detailed comment..."
                           value={comment}
                           onChange={e => setComment(e.target.value)}
                           onKeyDown={e => e.key === 'Enter' && handleComment(ticket.id)}
@@ -498,9 +497,9 @@ export function AdminTicketsContent() {
                         <button
                           onClick={() => handleComment(ticket.id)}
                           disabled={!comment.trim()}
-                          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white px-3 py-2 rounded-xl transition"
+                          className="bg-[#1e3a5f] hover:bg-[#162a45] disabled:opacity-40 text-white px-5 py-2.5 rounded-xl transition shadow-md"
                         >
-                          <Send size={14} />
+                          <Send size={18} />
                         </button>
                       </div>
                     </div>
@@ -513,22 +512,22 @@ export function AdminTicketsContent() {
       )}
 
       {confirmDeleteId && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-          <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-sm w-full mx-4 space-y-4">
-            <h3 className="text-white font-semibold text-lg">Delete Ticket?</h3>
-            <p className="text-slate-400 text-sm">
-              This action cannot be undone. The ticket and all its attachments and comments will be permanently deleted.
+        <div className="fixed inset-0 bg-[#1e3a5f]/40 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-sm w-full mx-4 shadow-2xl border border-gray-100">
+            <h3 className="text-[#1e3a5f] font-bold text-xl mb-2">Delete Ticket?</h3>
+            <p className="text-gray-500 text-sm mb-6 leading-relaxed">
+              This action cannot be undone. The ticket and all its attachments and comments will be permanently removed from the SmartCampus system.
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-xl text-sm transition"
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-3 rounded-xl text-sm transition font-bold"
               >
                 Cancel
               </button>
               <button
                 onClick={() => handleDeleteTicket(confirmDeleteId)}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-sm transition font-medium"
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl text-sm transition font-bold shadow-lg shadow-red-200"
               >
                 Yes, Delete
               </button>
@@ -543,12 +542,11 @@ export function AdminTicketsContent() {
 
 export default function AdminTicketsPage() {
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-[#f8fafc]">
       <Navbar />
-      <div className="max-w-5xl mx-auto px-4 pt-24 pb-16">
+      <div className="max-w-5xl mx-auto px-4 pt-28 pb-20">
         <AdminTicketsContent />
       </div>
     </div>
   )
 }
-

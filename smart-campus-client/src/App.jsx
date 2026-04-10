@@ -33,6 +33,9 @@ import MyTicketsPage from './pages/user/MyTicketsPage'
 import AdminTicketsPage from './pages/admin/AdminTicketsPage'
 import TechnicianTicketsPage from './pages/technician/TechnicianTicketsPage'
 
+// User Management Page (New)
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+
 export default function App() {
   return (
     <AuthProvider>
@@ -82,7 +85,7 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* ✅ USER tickets route - Member 3 */}
+          {/* USER tickets route - Member 3 */}
           <Route path="/user/tickets" element={
             <ProtectedRoute allowedRoles={['USER']}>
               <MyTicketsPage />
@@ -113,6 +116,13 @@ export default function App() {
             </ProtectedRoute>
           } />
 
+          {/* ADMIN User Management route */}
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          } />
+
           {/* ADMIN booking route - Member 2 */}
           <Route path="/admin/bookings" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
@@ -120,7 +130,7 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* ✅ ADMIN tickets route - Member 3 */}
+          {/* ADMIN tickets route - Member 3 */}
           <Route path="/admin/tickets" element={
             <ProtectedRoute allowedRoles={['ADMIN']}>
               <AdminTicketsPage />
@@ -151,7 +161,7 @@ export default function App() {
             </ProtectedRoute>
           } />
 
-          {/* ✅ TECHNICIAN tickets route - Member 3 */}
+          {/* TECHNICIAN tickets route - Member 3 */}
           <Route path="/technician/tickets" element={
             <ProtectedRoute allowedRoles={['TECHNICIAN']}>
               <TechnicianTicketsPage />
