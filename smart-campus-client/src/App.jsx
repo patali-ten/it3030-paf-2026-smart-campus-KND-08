@@ -34,6 +34,8 @@ import MyTicketsPage from './pages/user/MyTicketsPage'
 import AdminTicketsPage from './pages/admin/AdminTicketsPage'
 import TechnicianTicketsPage from './pages/technician/TechnicianTicketsPage'
 
+import AdminUsersPage from './pages/admin/AdminUsersPage'
+
 export default function App() {
   return (
     <AuthProvider>
@@ -157,6 +159,13 @@ export default function App() {
             <ProtectedRoute allowedRoles={['TECHNICIAN']}>
               <TechnicianTicketsPage />
             </ProtectedRoute>
+          } />
+
+          {/* ADMIN users route */}
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['ADMIN']}>
+           <AdminUsersPage />
+           </ProtectedRoute>
           } />
 
         </Routes>
