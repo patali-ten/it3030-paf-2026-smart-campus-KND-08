@@ -27,8 +27,8 @@ public class NotificationPreferenceController {
     // Saves the full set of enabled types for this user
     @PutMapping("/{userId}")
     public ResponseEntity<NotificationPreferenceDTO> updatePreferences(
-            @PathVariable Long userId,
-            @RequestBody Set<NotificationType> enabledTypes) {
-        return ResponseEntity.ok(preferenceService.updatePreferences(userId, enabledTypes));
-    }
+        @PathVariable Long userId,
+        @RequestBody NotificationPreferenceDTO request) {   // ← use DTO
+    return ResponseEntity.ok(preferenceService.updatePreferences(userId, request.getEnabledTypes()));
+}
 }

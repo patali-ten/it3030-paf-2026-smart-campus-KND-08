@@ -19,4 +19,4 @@ export const getNotificationPreferences = (userId) =>
   api.get(`/notification-preferences/${userId}`)
 
 export const updateNotificationPreferences = (userId, enabledTypes) =>
-  api.put(`/notification-preferences/${userId}`, enabledTypes)
+  api.put(`/notification-preferences/${userId}`, { enabledTypes })
