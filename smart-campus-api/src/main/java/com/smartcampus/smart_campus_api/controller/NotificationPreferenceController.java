@@ -1,12 +1,10 @@
 package com.smartcampus.smart_campus_api.controller;
 
 import com.smartcampus.smart_campus_api.dto.NotificationPreferenceDTO;
-import com.smartcampus.smart_campus_api.model.NotificationType;
 import com.smartcampus.smart_campus_api.service.NotificationPreferenceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/notification-preferences")
