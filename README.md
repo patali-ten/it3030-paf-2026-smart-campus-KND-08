@@ -12,7 +12,7 @@ This system allows users to:
 The application is built using:
 - **Backend:** Spring Boot (REST API)
 - **Frontend:** React.js
-- **Database:** (MySQL / MongoDB – update based on your project)
+- **Database:** (MySQL Workbench)
 
 ---
 
